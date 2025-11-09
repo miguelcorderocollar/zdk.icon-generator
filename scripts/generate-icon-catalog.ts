@@ -41,6 +41,7 @@ function generateCatalog(): IconCatalog {
   const byPack: Record<IconPack, string[]> = {
     'zendesk-garden': [],
     feather: [],
+    emoji: [],
   };
 
   for (const icon of allIcons) {
@@ -58,6 +59,11 @@ function generateCatalog(): IconCatalog {
     licenses: {
       'zendesk-garden': gardenLicense,
       feather: featherLicense,
+      emoji: {
+        name: 'User-provided emojis',
+        type: 'User Content',
+        url: '',
+      },
     },
     icons,
     byPack,

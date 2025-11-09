@@ -89,7 +89,23 @@ export function useIconSearch({
   const [cachedResults, setCachedResults] = React.useState<IconMetadata[]>([]);
   const cacheRef = React.useRef<Map<string, IconMetadata[]>>(new Map());
   const requestIdRef = React.useRef(0);
+  const cachedResultsRef = React.useRef<IconMetadata[]>([]);
+  const sortByRef = React.useRef<SortOption>(sortBy);
+  const selectedPackRef = React.useRef<IconPack>(selectedPack);
   const debouncedQuery = useDebouncedValue(searchQuery);
+
+  // Keep refs in sync with state/props
+  React.useEffect(() => {
+    cachedResultsRef.current = cachedResults;
+  }, [cachedResults]);
+
+  React.useEffect(() => {
+    sortByRef.current = sortBy;
+  }, [sortBy]);
+
+  React.useEffect(() => {
+    selectedPackRef.current = selectedPack;
+  }, [selectedPack]);
 
   React.useEffect(() => {
     if (refreshKey > 0) {
@@ -101,15 +117,20 @@ export function useIconSearch({
   // This can be called from parent components when favorites change or emojis are added
   React.useEffect(() => {
     const handleStorageChange = () => {
+      // Access latest values from refs to avoid dependency array issues
+      const currentPack = selectedPackRef.current;
+      const currentCachedResults = cachedResultsRef.current;
+      const currentSortBy = sortByRef.current;
+
       // For emoji pack or when emojis might have been added, always do a full refresh
       // to ensure new emojis appear in the list
-      if (selectedPack === ICON_PACKS.EMOJI || selectedPack === ICON_PACKS.ALL) {
+      if (currentPack === ICON_PACKS.EMOJI || currentPack === ICON_PACKS.ALL) {
         // Clear cache and trigger full refresh to include new emojis
         cacheRef.current.clear();
         setRefreshKey((prev) => prev + 1);
-      } else if (cachedResults.length > 0) {
+      } else if (currentCachedResults.length > 0) {
         // For other packs, just re-sort existing results (favorites might have changed)
-        const sorted = sortIcons(cachedResults, sortBy);
+        const sorted = sortIcons(currentCachedResults, currentSortBy);
         setIcons(sorted);
       } else {
         // If no cached results, trigger full refresh
@@ -127,7 +148,7 @@ export function useIconSearch({
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("icon-favorites-changed", handleStorageChange);
     };
-  }, [cachedResults, sortBy, selectedPack]);
+  }, []);
 
   // Search and filter icons
   React.useEffect(() => {
