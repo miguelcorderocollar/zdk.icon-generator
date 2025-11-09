@@ -4,8 +4,7 @@ import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Download, Info } from "lucide-react";
+import { Download } from "lucide-react";
 import { PngPreview } from "@/src/components/PngPreview";
 import { SvgPreview } from "@/src/components/SvgPreview";
 import { EmptyState } from "@/src/components/EmptyState";
@@ -41,21 +40,7 @@ export function PreviewPane({
   return (
     <Card className="flex h-full flex-col">
       <CardHeader className="flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <CardTitle>Preview</CardTitle>
-          {!hasSelection && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="size-4 text-muted-foreground" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Select an icon to see preview</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
+        <CardTitle>Preview</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-4 overflow-hidden p-6">
         {/* Preview Content Area - Scrollable */}

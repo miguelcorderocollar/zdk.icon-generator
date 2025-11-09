@@ -2,7 +2,7 @@
  * Application-wide constants
  */
 
-export const APP_NAME = "ZDK Icon Generator";
+export const APP_NAME = "Zendesk App Icon Generator";
 export const APP_DESCRIPTION = "Generate compliant Zendesk app icon bundles";
 
 /**

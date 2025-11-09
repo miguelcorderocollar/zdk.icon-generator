@@ -1,19 +1,34 @@
 ## Overview
 
-ZDK Icon Generator is a local-first tool for crafting compliant Zendesk app icon bundles. It streamlines choosing icons from vetted packs, customizing colors and effects, and exporting the required asset set (`logo.png`, `logo-small.png`, and location-specific SVG files) with correct naming and sizing.
+Zendesk App Icon Generator is a local-first tool for crafting compliant Zendesk app icon bundles. It streamlines choosing icons from vetted packs, customizing colors and effects, and exporting the required asset set (`logo.png`, `logo-small.png`, and location-specific SVG files) with correct naming and sizing.
 
-Key goals:
-- Centralize Apache-2.0 friendly icon packs (Zendesk Garden, Feather, more to come).
-- Provide an intuitive search and selection experience tailored to Zendesk app locations.
-- Offer real-time previews, configurable styling presets, and one-click ZIP export.
-- Remember recent choices using `localStorage` for a smoother workflow.
+## Features
+
+- **Icon Search & Selection**: Full-text search across icon packs with filtering by pack (Zendesk Garden, Feather, Emoji, or All)
+- **Customization Controls**:
+  - Select Zendesk app locations (Support, Chat, Talk, etc.)
+  - Customize background and icon colors with color picker
+  - Adjust icon size with slider
+  - Color history for quick access to recently used colors
+- **Real-time Preview**: Live preview of icons with selected customizations across all app locations
+- **Export to ZIP**: One-click export generating:
+  - `logo.png` (1024x1024px)
+  - `logo-small.png` (512x512px)
+  - Location-specific SVG files (e.g., `assets/icon-support.svg`)
+  - Export metadata JSON file
+- **Local Storage Persistence**:
+  - Favorite icons
+  - Recent icons (last 20)
+  - Color history (last 5 per color type)
+- **Emoji Support**: Add custom emojis that are searchable and exportable alongside icon packs
 
 Explore the product vision in `docs/app-concept.md` and phased roadmap in `docs/development-plan.md`. Zendesk-specific requirements are summarized in `docs/zendesk-icon-docs.md`.
 
 ## Tech Stack
-- Next.js (App Router) with React and TypeScript.
-- Styling: TBD (evaluate Tailwind, CSS Modules, or a component library).
-- Client-side rendering of icons via SVG/canvas and local ZIP generation.
+- **Framework**: Next.js 16 (App Router) with React 19 and TypeScript
+- **Styling**: Tailwind CSS v4 with shadcn/ui component library
+- **Icons**: Client-side rendering via SVG/canvas and local ZIP generation using JSZip
+- **State Management**: React hooks with localStorage for persistence
 
 ## Prerequisites
 - Node.js 18+ (or Bun if preferred).
@@ -47,24 +62,31 @@ npm run lint            # Run ESLint
 The `generate-icons` script processes icons from installed icon packs and generates a unified catalog at `public/icon-catalog.json`. Run this after installing or updating icon pack dependencies.
 
 ## Project Structure
-- `app/` — Next.js application code.
-- `docs/` — Product concept, development plan, and Zendesk icon guidelines.
-- `public/` — Static assets (including generated `icon-catalog.json`).
-- `scripts/` — Build and data processing scripts.
-- `src/` — Shared source code (types, adapters, utilities).
-- `eslint.config.mjs`, `tsconfig.json` — Tooling configuration.
+- `app/` — Next.js App Router pages and layout
+- `components/` — React components (main UI panes and shadcn/ui components)
+- `src/` — Core application code:
+  - `components/` — Reusable UI components (ColorPicker, ExportModal, etc.)
+  - `hooks/` — React hooks for state management and search
+  - `utils/` — Utilities (icon catalog, rendering, export, localStorage)
+  - `types/` — TypeScript type definitions
+  - `constants/` — App constants and configuration
+  - `adapters/` — Icon pack adapters for normalization
+- `docs/` — Product concept, development plan, and Zendesk icon guidelines
+- `public/` — Static assets (including generated `icon-catalog.json`)
+- `scripts/` — Build and data processing scripts (icon catalog generation)
 
 ## Icon Sources & Licensing
-- Bundled icon packs:
-  - [`@zendeskgarden/svg-icons`](https://github.com/zendeskgarden/svg-icons) (Apache-2.0).
-  - [`feather-icons`](https://github.com/feathericons/feather) (MIT).
-- Maintain upstream LICENSE files in the repo and surface attribution inside the UI.
-- Confirm compatibility when adding new icon sources; prefer permissive licenses (Apache-2.0, MIT, CC0/CC BY with attribution).
+- **Bundled icon packs**:
+  - [`@zendeskgarden/svg-icons`](https://github.com/zendeskgarden/svg-icons) (Apache-2.0)
+  - [`feather-icons`](https://github.com/feathericons/feather) (MIT)
+- **Custom emojis**: User-added emojis stored in localStorage
+- All icon packs maintain their original licenses. Attribution is displayed in the app's About dialog.
 
 ## Development Guidelines
-- Follow the roadmap phases in `docs/development-plan.md`.
-- Keep the app local-first and avoid backend dependencies unless requirements change.
-- Add unit/integration tests for rendering logic, asset export, and UX flows as they solidify.
+- Keep the app local-first and avoid backend dependencies
+- Follow TypeScript best practices with strict typing
+- Use shadcn/ui components for consistent UI patterns
+- Maintain separation of concerns: hooks for state, utils for business logic, components for UI
 
 ## Contributing
 1. Create a feature branch.

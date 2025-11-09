@@ -1,4 +1,4 @@
-# ZDK Icon Generator Concept
+# Zendesk App Icon Generator Concept
 
 ## Vision
 Create a focused web application that helps Zendesk app builders generate compliant icon sets quickly. The tool should feel approachable, stay entirely local-first, and streamline the workflow from icon discovery to exportable assets that match Zendesk’s naming and sizing requirements.
