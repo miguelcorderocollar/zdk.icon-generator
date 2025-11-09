@@ -1,0 +1,52 @@
+/**
+ * Icon pack metadata
+ */
+export type IconPack = 'zendesk-garden' | 'feather';
+
+/**
+ * Icon pack license information
+ */
+export interface IconPackLicense {
+  name: string;
+  type: string;
+  url: string;
+}
+
+/**
+ * Normalized icon metadata
+ */
+export interface IconMetadata {
+  /** Unique identifier for the icon (pack-name-variant) */
+  id: string;
+  /** Display name (human-readable) */
+  name: string;
+  /** Icon pack source */
+  pack: IconPack;
+  /** Variant identifier (e.g., 'fill', 'stroke', '12', '16') */
+  variant?: string;
+  /** SVG content */
+  svg: string;
+  /** Searchable keywords */
+  keywords: string[];
+  /** Original size if applicable (e.g., 12, 16, 24) */
+  size?: number;
+}
+
+/**
+ * Icon catalog structure
+ */
+export interface IconCatalog {
+  /** Metadata about the catalog */
+  meta: {
+    version: string;
+    generatedAt: string;
+    totalIcons: number;
+  };
+  /** License information for each pack */
+  licenses: Record<IconPack, IconPackLicense>;
+  /** All icons indexed by ID */
+  icons: Record<string, IconMetadata>;
+  /** Icons grouped by pack */
+  byPack: Record<IconPack, string[]>;
+}
+

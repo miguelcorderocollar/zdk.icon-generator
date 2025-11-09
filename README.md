@@ -37,12 +37,21 @@ npm run dev
 
 Open http://localhost:3000 to access the app. The server hot-reloads when files change.
 
-Additional scripts (if configured later) should be documented here; run `npm run lint` or `npm run test` once those commands are added.
+Additional scripts:
+
+```bash
+npm run generate-icons  # Generate icon catalog from icon packs
+npm run lint            # Run ESLint
+```
+
+The `generate-icons` script processes icons from installed icon packs and generates a unified catalog at `public/icon-catalog.json`. Run this after installing or updating icon pack dependencies.
 
 ## Project Structure
 - `app/` — Next.js application code.
 - `docs/` — Product concept, development plan, and Zendesk icon guidelines.
-- `public/` — Static assets.
+- `public/` — Static assets (including generated `icon-catalog.json`).
+- `scripts/` — Build and data processing scripts.
+- `src/` — Shared source code (types, adapters, utilities).
 - `eslint.config.mjs`, `tsconfig.json` — Tooling configuration.
 
 ## Icon Sources & Licensing
