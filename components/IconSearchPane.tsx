@@ -3,19 +3,22 @@
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Search, X } from "lucide-react";
 import { IconGrid } from "@/src/components/IconGrid";
 import { useKeyboardShortcuts } from "@/src/hooks/use-keyboard-shortcuts";
-import { ICON_PACKS } from "@/src/constants/app";
+import { useIconSearch, type SortOption } from "@/src/hooks/use-icon-search";
+import { ICON_PACKS, type IconPack } from "@/src/constants/app";
+import { addRecentIcon } from "@/src/utils/local-storage";
+import { getFavorites } from "@/src/utils/local-storage";
 
 export interface IconSearchPaneProps {
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
-  selectedPack?: string;
-  onPackChange?: (pack: string) => void;
+  selectedPack?: IconPack;
+  onPackChange?: (pack: IconPack) => void;
   selectedIconId?: string;
   onIconSelect?: (iconId: string) => void;
 }
@@ -29,10 +32,27 @@ export function IconSearchPane({
   onIconSelect,
 }: IconSearchPaneProps) {
   const searchInputRef = React.useRef<HTMLInputElement>(null);
-  const [isMac, setIsMac] = React.useState(false);
+  const [isMac, setIsMac] = React.useState<boolean>(false); // Default to false to avoid hydration mismatch
+  const [sortBy, setSortBy] = React.useState<SortOption>("name");
+  const [favorites, setFavorites] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     setIsMac(navigator.platform.toUpperCase().indexOf("MAC") >= 0);
+    setFavorites(getFavorites());
+  }, []);
+
+  // Use the icon search hook
+  const { icons, isLoading, error } = useIconSearch({
+    searchQuery,
+    selectedPack,
+    sortBy,
+  });
+
+  // Refresh favorites when they change (triggered by favorite toggle)
+  const handleFavoriteToggle = React.useCallback((iconId: string, isFavorite: boolean) => {
+    setFavorites(getFavorites());
+    // Dispatch custom event to trigger refresh in useIconSearch hook
+    window.dispatchEvent(new Event("icon-favorites-changed"));
   }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,11 +65,17 @@ export function IconSearchPane({
   };
 
   const handlePackChange = (value: string) => {
-    onPackChange?.(value);
+    onPackChange?.(value as IconPack);
   };
 
   const handleFocusSearch = () => {
     searchInputRef.current?.focus();
+  };
+
+  const handleIconSelect = (iconId: string) => {
+    // Add to recent icons
+    addRecentIcon(iconId);
+    onIconSelect?.(iconId);
   };
 
   useKeyboardShortcuts({
@@ -57,40 +83,12 @@ export function IconSearchPane({
     onEscape: handleClearSearch,
   });
 
-  // Generate icon list based on pack and search query
-  const generateIcons = React.useCallback(
-    (count: number, label: string, pack: string) => {
-      const filteredCount = searchQuery
-        ? Math.max(0, count - Math.floor(Math.random() * count * 0.3))
-        : count;
-
-      return Array.from({ length: filteredCount }).map((_, i) => ({
-        id: `${pack}-${i + 1}`,
-        label: `${label} ${i + 1}`,
-      }));
-    },
-    [searchQuery]
-  );
-
-  const allIcons = React.useMemo(
-    () => generateIcons(24, "Icon", ICON_PACKS.ALL),
-    [generateIcons]
-  );
-  const gardenIcons = React.useMemo(
-    () => generateIcons(12, "Garden", ICON_PACKS.GARDEN),
-    [generateIcons]
-  );
-  const featherIcons = React.useMemo(
-    () => generateIcons(12, "Feather", ICON_PACKS.FEATHER),
-    [generateIcons]
-  );
-
   return (
     <Card className="flex h-full flex-col">
       <CardHeader>
         <CardTitle>Icon Search</CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col gap-4 overflow-hidden">
+      <CardContent className="flex flex-1 min-h-0 flex-col gap-4 overflow-hidden">
         {/* Search Input */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
@@ -128,11 +126,29 @@ export function IconSearchPane({
           )}
         </div>
 
+        {/* Sort Control */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="sort-select" className="text-sm text-muted-foreground whitespace-nowrap">
+            Sort by:
+          </label>
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+            <SelectTrigger id="sort-select" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="recent">Recently Used</SelectItem>
+              <SelectItem value="favorites">Favorites First</SelectItem>
+              <SelectItem value="pack">Pack</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Filters Tabs */}
         <Tabs
           value={selectedPack}
           onValueChange={handlePackChange}
-          className="w-full"
+          className="flex-1 min-h-0 w-full"
         >
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value={ICON_PACKS.ALL}>All</TabsTrigger>
@@ -144,36 +160,60 @@ export function IconSearchPane({
             value={ICON_PACKS.ALL}
             className="mt-4 flex-1 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col"
           >
-            <IconGrid
-              icons={allIcons}
-              selectedIconId={selectedIconId}
-              onIconSelect={onIconSelect}
-              searchQuery={searchQuery}
-            />
+            {error ? (
+              <div className="flex items-center justify-center h-full text-destructive">
+                <p>Error loading icons: {error.message}</p>
+              </div>
+            ) : (
+              <IconGrid
+                icons={icons}
+                selectedIconId={selectedIconId}
+                onIconSelect={handleIconSelect}
+                onFavoriteToggle={handleFavoriteToggle}
+                searchQuery={searchQuery}
+                isLoading={isLoading}
+              />
+            )}
           </TabsContent>
 
           <TabsContent
             value={ICON_PACKS.GARDEN}
             className="mt-4 flex-1 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col"
           >
-            <IconGrid
-              icons={gardenIcons}
-              selectedIconId={selectedIconId}
-              onIconSelect={onIconSelect}
-              searchQuery={searchQuery}
-            />
+            {error ? (
+              <div className="flex items-center justify-center h-full text-destructive">
+                <p>Error loading icons: {error.message}</p>
+              </div>
+            ) : (
+              <IconGrid
+                icons={icons}
+                selectedIconId={selectedIconId}
+                onIconSelect={handleIconSelect}
+                onFavoriteToggle={handleFavoriteToggle}
+                searchQuery={searchQuery}
+                isLoading={isLoading}
+              />
+            )}
           </TabsContent>
 
           <TabsContent
             value={ICON_PACKS.FEATHER}
             className="mt-4 flex-1 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col"
           >
-            <IconGrid
-              icons={featherIcons}
-              selectedIconId={selectedIconId}
-              onIconSelect={onIconSelect}
-              searchQuery={searchQuery}
-            />
+            {error ? (
+              <div className="flex items-center justify-center h-full text-destructive">
+                <p>Error loading icons: {error.message}</p>
+              </div>
+            ) : (
+              <IconGrid
+                icons={icons}
+                selectedIconId={selectedIconId}
+                onIconSelect={handleIconSelect}
+                onFavoriteToggle={handleFavoriteToggle}
+                searchQuery={searchQuery}
+                isLoading={isLoading}
+              />
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>

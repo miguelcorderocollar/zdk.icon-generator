@@ -5,9 +5,28 @@
  * The catalog is loaded from /icon-catalog.json at runtime.
  */
 
-import type { IconCatalog, IconMetadata, IconPack } from '../types/icon';
+import type { IconCatalog, IconMetadata, IconPack } from "../types/icon";
 
 let catalogCache: IconCatalog | null = null;
+let searchIndexCache: Array<{ icon: IconMetadata; searchText: string }> | null = null;
+
+function buildSearchIndex(catalog: IconCatalog) {
+  if (searchIndexCache) {
+    return searchIndexCache;
+  }
+
+  searchIndexCache = Object.values(catalog.icons).map((icon) => {
+    const keywordsText = icon.keywords.join(" ");
+    const searchText = `${icon.name} ${icon.id} ${keywordsText}`.toLowerCase();
+
+    return {
+      icon,
+      searchText,
+    };
+  });
+
+  return searchIndexCache;
+}
 
 /**
  * Load the icon catalog from the public directory
@@ -23,9 +42,11 @@ export async function loadIconCatalog(): Promise<IconCatalog> {
       throw new Error(`Failed to load icon catalog: ${response.statusText}`);
     }
     catalogCache = await response.json();
+    // Reset derived caches whenever we reload the catalog
+    searchIndexCache = null;
     return catalogCache;
   } catch (error) {
-    console.error('Error loading icon catalog:', error);
+    console.error("Error loading icon catalog:", error);
     throw error;
   }
 }
@@ -43,7 +64,14 @@ export async function getAllIcons(): Promise<Record<string, IconMetadata>> {
  */
 export async function getIconsByPack(pack: IconPack): Promise<IconMetadata[]> {
   const catalog = await loadIconCatalog();
-  const iconIds = catalog.byPack[pack] || [];
+  // Map UI pack names to catalog pack names
+  const packMap: Record<string, string> = {
+    "garden": "zendesk-garden",
+    "feather": "feather",
+  };
+  
+  const catalogPackName = packMap[pack] || pack;
+  const iconIds = catalog.byPack[catalogPackName as IconPack] || [];
   return iconIds.map((id) => catalog.icons[id]).filter(Boolean);
 }
 
@@ -61,29 +89,15 @@ export async function getIconById(id: string): Promise<IconMetadata | null> {
 export async function searchIcons(query: string): Promise<IconMetadata[]> {
   const catalog = await loadIconCatalog();
   const searchTerm = query.toLowerCase().trim();
-  
+
   if (!searchTerm) {
     return Object.values(catalog.icons);
   }
 
-  return Object.values(catalog.icons).filter((icon) => {
-    // Search in name
-    if (icon.name.toLowerCase().includes(searchTerm)) {
-      return true;
-    }
-
-    // Search in keywords
-    if (icon.keywords.some((keyword) => keyword.includes(searchTerm))) {
-      return true;
-    }
-
-    // Search in ID
-    if (icon.id.toLowerCase().includes(searchTerm)) {
-      return true;
-    }
-
-    return false;
-  });
+  const index = buildSearchIndex(catalog);
+  return index
+    .filter(({ searchText }) => searchText.includes(searchTerm))
+    .map(({ icon }) => icon);
 }
 
 /**
@@ -93,7 +107,14 @@ export async function filterIconsByPack(
   icons: IconMetadata[],
   pack: IconPack
 ): Promise<IconMetadata[]> {
-  return icons.filter((icon) => icon.pack === pack);
+  // Map UI pack names to catalog pack names
+  const packMap: Record<string, string> = {
+    "garden": "zendesk-garden",
+    "feather": "feather",
+  };
+  
+  const catalogPackName = packMap[pack] || pack;
+  return icons.filter((icon) => icon.pack === catalogPackName);
 }
 
 /**
@@ -109,5 +130,6 @@ export async function getPackLicense(pack: IconPack) {
  */
 export function clearCatalogCache(): void {
   catalogCache = null;
+  searchIndexCache = null;
 }
 

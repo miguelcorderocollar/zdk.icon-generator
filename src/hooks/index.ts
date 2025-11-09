@@ -11,3 +11,8 @@ export type {
 export { useKeyboardShortcuts } from "./use-keyboard-shortcuts";
 export type { KeyboardShortcuts } from "./use-keyboard-shortcuts";
 
+export { useIconSearch } from "./use-icon-search";
+export type { SortOption, UseIconSearchOptions, UseIconSearchResult } from "./use-icon-search";
+
+export { useDebouncedValue } from "./use-debounced-value";
+
