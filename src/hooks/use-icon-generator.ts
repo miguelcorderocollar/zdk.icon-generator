@@ -7,6 +7,7 @@ import type { AppLocation } from "@/src/types/app-location";
 import { ICON_PACKS, type IconPack } from "@/src/constants/app";
 import { loadIconCatalog } from "@/src/utils/icon-catalog";
 import { getUserEmojis } from "@/src/utils/emoji-catalog";
+import { loadGeneratorState, saveGeneratorState } from "@/src/utils/local-storage";
 
 export interface IconGeneratorState {
   selectedLocations: AppLocation[];
@@ -40,40 +41,89 @@ const DEFAULT_STATE: IconGeneratorState = {
 
 export function useIconGenerator() {
   const [state, setState] = React.useState<IconGeneratorState>(DEFAULT_STATE);
-  const [hasInitializedRandomIcon, setHasInitializedRandomIcon] = React.useState(false);
+  const [hasInitialized, setHasInitialized] = React.useState(false);
+  const [isInitialLoad, setIsInitialLoad] = React.useState(true);
 
-  // Initialize with a random icon on first load
+  // Load persisted state on mount and initialize random icon if needed
   React.useEffect(() => {
-    if (hasInitializedRandomIcon || typeof window === "undefined") return;
+    if (hasInitialized || typeof window === "undefined") return;
 
-    async function initializeRandomIcon() {
-      try {
-        // Load icon catalog
-        const catalog = await loadIconCatalog();
-        const allIcons = Object.values(catalog.icons);
-        
-        // Get user emojis if available
-        const userEmojis = getUserEmojis();
-        
-        // Combine all icons
-        const combinedIcons = [...allIcons, ...userEmojis];
-        
-        // Select a random icon if any are available
-        if (combinedIcons.length > 0) {
-          const randomIndex = Math.floor(Math.random() * combinedIcons.length);
-          const randomIcon = combinedIcons[randomIndex];
-          setState((prev) => ({ ...prev, selectedIconId: randomIcon.id }));
-        }
-        
-        setHasInitializedRandomIcon(true);
-      } catch (error) {
-        console.error("Failed to initialize random icon:", error);
-        setHasInitializedRandomIcon(true);
+    async function initialize() {
+      const persistedState = loadGeneratorState();
+      let hasPersistedIcon = false;
+
+      if (persistedState) {
+        // Validate and restore persisted state
+        const restoredState: IconGeneratorState = {
+          selectedLocations: Array.isArray(persistedState.selectedLocations)
+            ? (persistedState.selectedLocations as AppLocation[])
+            : DEFAULT_STATE.selectedLocations,
+          selectedIconId: persistedState.selectedIconId || undefined,
+          backgroundColor: typeof persistedState.backgroundColor === "string"
+            ? persistedState.backgroundColor
+            : DEFAULT_STATE.backgroundColor,
+          iconColor: typeof persistedState.iconColor === "string"
+            ? persistedState.iconColor
+            : DEFAULT_STATE.iconColor,
+          searchQuery: DEFAULT_STATE.searchQuery, // Don't persist search query
+          selectedPack: Object.values(ICON_PACKS).includes(persistedState.selectedPack as IconPack)
+            ? (persistedState.selectedPack as IconPack)
+            : DEFAULT_STATE.selectedPack,
+          iconSize: typeof persistedState.iconSize === "number" && persistedState.iconSize > 0
+            ? persistedState.iconSize
+            : DEFAULT_STATE.iconSize,
+        };
+        hasPersistedIcon = !!restoredState.selectedIconId;
+        setState(restoredState);
       }
+
+      // Initialize with a random icon if no persisted icon exists
+      if (!hasPersistedIcon) {
+        try {
+          const catalog = await loadIconCatalog();
+          const allIcons = Object.values(catalog.icons);
+          const userEmojis = getUserEmojis();
+          const combinedIcons = [...allIcons, ...userEmojis];
+          
+          if (combinedIcons.length > 0) {
+            const randomIndex = Math.floor(Math.random() * combinedIcons.length);
+            const randomIcon = combinedIcons[randomIndex];
+            setState((prev) => ({ ...prev, selectedIconId: randomIcon.id }));
+          }
+        } catch (error) {
+          console.error("Failed to initialize random icon:", error);
+        }
+      }
+
+      setHasInitialized(true);
+      setIsInitialLoad(false);
     }
 
-    initializeRandomIcon();
-  }, [hasInitializedRandomIcon]);
+    initialize();
+  }, [hasInitialized]);
+
+  // Save state to localStorage whenever it changes (but not during initial load)
+  React.useEffect(() => {
+    if (!hasInitialized || isInitialLoad || typeof window === "undefined") return;
+
+    saveGeneratorState({
+      selectedLocations: state.selectedLocations,
+      selectedIconId: state.selectedIconId,
+      backgroundColor: state.backgroundColor,
+      iconColor: state.iconColor,
+      selectedPack: state.selectedPack,
+      iconSize: state.iconSize,
+    });
+  }, [
+    hasInitialized,
+    isInitialLoad,
+    state.selectedLocations,
+    state.selectedIconId,
+    state.backgroundColor,
+    state.iconColor,
+    state.selectedPack,
+    state.iconSize,
+  ]);
 
   const actions: IconGeneratorActions = React.useMemo(
     () => ({

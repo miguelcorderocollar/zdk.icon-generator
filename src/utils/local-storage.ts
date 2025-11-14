@@ -146,4 +146,68 @@ export function clearRecentIcons(): void {
   }
 }
 
+/**
+ * Generator state persistence
+ */
+const GENERATOR_STATE_KEY = `${STORAGE_PREFIX}:generator-state`;
+
+export interface PersistedGeneratorState {
+  selectedLocations: string[];
+  selectedIconId?: string;
+  backgroundColor: string | { type: string; angle: number; stops: Array<{ color: string; offset: number }> };
+  iconColor: string;
+  selectedPack: string;
+  iconSize: number;
+}
+
+/**
+ * Save generator state to localStorage
+ */
+export function saveGeneratorState(state: PersistedGeneratorState): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(GENERATOR_STATE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.error('Error saving generator state to localStorage:', error);
+  }
+}
+
+/**
+ * Load generator state from localStorage
+ */
+export function loadGeneratorState(): PersistedGeneratorState | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const stored = localStorage.getItem(GENERATOR_STATE_KEY);
+    if (!stored) {
+      return null;
+    }
+    return JSON.parse(stored) as PersistedGeneratorState;
+  } catch (error) {
+    console.error('Error loading generator state from localStorage:', error);
+    return null;
+  }
+}
+
+/**
+ * Clear generator state from localStorage
+ */
+export function clearGeneratorState(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.removeItem(GENERATOR_STATE_KEY);
+  } catch (error) {
+    console.error('Error clearing generator state from localStorage:', error);
+  }
+}
+
 
