@@ -10,6 +10,8 @@ import type { IconGeneratorState } from "../hooks/use-icon-generator";
 import { renderSvg } from "../utils/renderer";
 import { getIconById } from "../utils/icon-catalog";
 import { useDebouncedValue } from "../hooks/use-debounced-value";
+import type { BackgroundValue } from "../utils/gradients";
+import { DEFAULT_COLORS } from "@/src/constants/app";
 
 export interface SvgPreviewProps {
   svgFiles: string[];
@@ -22,7 +24,19 @@ export function SvgPreview({ svgFiles, iconId, state }: SvgPreviewProps) {
   const [isLoading, setIsLoading] = React.useState(false);
 
   // Debounce expensive state changes (colors, size) but keep iconId and svgFiles immediate
-  const debouncedBackgroundColor = useDebouncedValue(state?.backgroundColor ?? "", 300);
+  // For BackgroundValue, we need to use a custom debounce that works with objects
+  const [debouncedBackgroundColor, setDebouncedBackgroundColor] = React.useState<BackgroundValue>(
+    state?.backgroundColor ?? DEFAULT_COLORS.BACKGROUND
+  );
+  
+  React.useEffect(() => {
+    if (!state?.backgroundColor) return;
+    const timer = setTimeout(() => {
+      setDebouncedBackgroundColor(state.backgroundColor);
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(state?.backgroundColor)]);
   const debouncedIconColor = useDebouncedValue(state?.iconColor ?? "", 300);
   const debouncedIconSize = useDebouncedValue(state?.iconSize ?? 64, 300);
 

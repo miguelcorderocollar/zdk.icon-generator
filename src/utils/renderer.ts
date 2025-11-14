@@ -5,6 +5,13 @@
 import type { IconMetadata } from "../types/icon";
 import type { IconGeneratorState } from "../hooks/use-icon-generator";
 import { SVG_SPECS } from "../constants/app";
+import type { BackgroundValue } from "./gradients";
+import {
+  isGradient,
+  isSolidColor,
+  gradientToSvgDef,
+  createCanvasGradient,
+} from "./gradients";
 
 /**
  * Render options for SVG generation
@@ -12,8 +19,8 @@ import { SVG_SPECS } from "../constants/app";
 export interface SvgRenderOptions {
   /** Icon metadata */
   icon: IconMetadata;
-  /** Background color (hex) */
-  backgroundColor: string;
+  /** Background color (hex) or gradient */
+  backgroundColor: BackgroundValue;
   /** Icon color (hex) */
   iconColor: string;
   /** Artboard size used for the SVG viewBox */
@@ -205,8 +212,22 @@ export function renderSvg(options: SvgRenderOptions): string {
   const effectivePadding = Math.max(0, Math.min(padding, size / 2));
   const iconSize = size - effectivePadding * 2;
   const viewBoxParts = viewBox.split(/\s+/).map(Number);
+  const vbMinX = viewBoxParts[0] || 0;
+  const vbMinY = viewBoxParts[1] || 0;
   const vbWidth = viewBoxParts[2] || 24;
   const vbHeight = viewBoxParts[3] || 24;
+
+  // Render background (solid color or gradient)
+  let backgroundElement: string;
+  let gradientDef: string = "";
+
+  if (isGradient(backgroundColor)) {
+    const gradientId = `bg-gradient-${Math.random().toString(36).substr(2, 9)}`;
+    gradientDef = gradientToSvgDef(backgroundColor, gradientId, size);
+    backgroundElement = `<rect width="${size}" height="${size}" fill="url(#${gradientId})"/>`;
+  } else {
+    backgroundElement = `<rect width="${size}" height="${size}" fill="${backgroundColor}"/>`;
+  }
 
   // For rasterized icons (emojis), render differently - embed the image directly
   if (shouldSkipColorTransform) {
@@ -231,9 +252,9 @@ export function renderSvg(options: SvgRenderOptions): string {
       const iconY = effectivePadding + (iconSize - scaledHeight) / 2;
       
       const finalSize = outputSize ?? size;
-      
+
       return `<svg width="${finalSize}" height="${finalSize}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-  <rect width="${size}" height="${size}" fill="${backgroundColor}"/>
+${gradientDef ? gradientDef + "\n" : ""}  ${backgroundElement}
   <image href="${href}" width="${scaledWidth}" height="${scaledHeight}" x="${iconX}" y="${iconY}"/>
 </svg>`;
     }
@@ -244,9 +265,10 @@ export function renderSvg(options: SvgRenderOptions): string {
   const scale = iconSize / Math.max(vbWidth, vbHeight);
   const adjustedContent = coloredContent;
   
-  // Center the icon
+  // Center the icon - calculate position to center the scaled icon in the padded area
   const iconX = effectivePadding + (iconSize - vbWidth * scale) / 2;
   const iconY = effectivePadding + (iconSize - vbHeight * scale) / 2;
+  const needsViewBoxOffset = vbMinX !== 0 || vbMinY !== 0;
 
   // Apply inherited attributes from root SVG element to the group
   // This handles Feather icons that set fill="none" and stroke attributes on the root <svg> tag
@@ -280,11 +302,20 @@ export function renderSvg(options: SvgRenderOptions): string {
 
   const groupAttrString = groupAttrs.length > 0 ? ' ' + groupAttrs.join(' ') : '';
 
+  // Combine transforms for precise centering
+  // Order: translate to center position, then scale, then offset viewBox origin if needed
+  // SVG applies transforms right-to-left, so we write: translate(center) scale() translate(-viewBoxOffset)
+  const transformParts: string[] = [`translate(${iconX}, ${iconY})`, `scale(${scale})`];
+  if (needsViewBoxOffset) {
+    transformParts.push(`translate(${-vbMinX}, ${-vbMinY})`);
+  }
+  const combinedTransform = transformParts.join(' ');
+
   const finalSize = outputSize ?? size;
 
   return `<svg width="${finalSize}" height="${finalSize}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-  <rect width="${size}" height="${size}" fill="${backgroundColor}"/>
-  <g transform="translate(${iconX}, ${iconY}) scale(${scale})"${groupAttrString}>
+${gradientDef ? gradientDef + "\n" : ""}  ${backgroundElement}
+  <g transform="${combinedTransform}"${groupAttrString}>
     ${adjustedContent}
   </g>
 </svg>`;
@@ -312,12 +343,18 @@ export async function renderPng(options: PngRenderOptions): Promise<Blob> {
     throw new Error("Failed to get canvas context");
   }
 
-  // Fill background
-  ctx.fillStyle = backgroundColor;
+  // Fill background (solid color or gradient)
+  if (isGradient(backgroundColor)) {
+    const gradient = createCanvasGradient(ctx, backgroundColor, width, height);
+    ctx.fillStyle = gradient;
+  } else {
+    ctx.fillStyle = backgroundColor;
+  }
   ctx.fillRect(0, 0, width, height);
 
   // Render icon as SVG first, then draw to canvas
   // Use the size option to control icon size, but render at canvas size for quality
+  // Always use transparent background in SVG since we're filling the canvas background separately
   const canvasSize = Math.min(width, height);
   const svgString = renderSvg({
     icon,

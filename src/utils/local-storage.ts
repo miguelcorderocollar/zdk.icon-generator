@@ -3,6 +3,8 @@
  * Namespaced to avoid collisions with other apps
  */
 
+import type { BackgroundValue } from "./gradients";
+
 const STORAGE_PREFIX = 'zdk-icon-generator';
 const FAVORITES_KEY = `${STORAGE_PREFIX}:favorites`;
 const RECENT_KEY = `${STORAGE_PREFIX}:recent`;
@@ -154,7 +156,7 @@ const GENERATOR_STATE_KEY = `${STORAGE_PREFIX}:generator-state`;
 export interface PersistedGeneratorState {
   selectedLocations: string[];
   selectedIconId?: string;
-  backgroundColor: string | { type: string; angle: number; stops: Array<{ color: string; offset: number }> };
+  backgroundColor: BackgroundValue;
   iconColor: string;
   selectedPack: string;
   iconSize: number;

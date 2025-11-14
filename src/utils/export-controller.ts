@@ -10,6 +10,7 @@ import type { ExportMetadata, ExportVariant } from "../types/export";
 import { getRequiredExportVariants } from "../types/export";
 import { generateExportAssets } from "./renderer";
 import { getIconById } from "./icon-catalog";
+import { isSolidColor, isGradient } from "./gradients";
 
 /**
  * Export result
@@ -124,7 +125,13 @@ export function validateExport(
   }
 
   // Check color contrast (basic validation)
-  const bgLuminance = getLuminance(state.backgroundColor);
+  // For gradients, use the first stop color for contrast check
+  const bgColor = isSolidColor(state.backgroundColor)
+    ? state.backgroundColor
+    : isGradient(state.backgroundColor)
+    ? state.backgroundColor.stops[0]?.color || "#000000"
+    : "#000000";
+  const bgLuminance = getLuminance(bgColor);
   const iconLuminance = getLuminance(state.iconColor);
   const contrast = Math.abs(bgLuminance - iconLuminance);
   if (contrast < 0.3) {

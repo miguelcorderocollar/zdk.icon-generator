@@ -9,17 +9,19 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Info } from "lucide-react";
 import { ColorPicker } from "@/src/components/ColorPicker";
 import { EffectSlider } from "@/src/components/EffectSlider";
+import { BackgroundControls } from "@/src/components/BackgroundControls";
 import { APP_LOCATION_OPTIONS } from "@/src/utils/app-location-options";
 import { getLocationCountText } from "@/src/utils/locations";
 import { DEFAULT_COLORS, ICON_GRID } from "@/src/constants/app";
 import { useDebouncedValue } from "@/src/hooks/use-debounced-value";
 import type { AppLocation } from "@/src/types/app-location";
+import type { BackgroundValue } from "@/src/utils/gradients";
 
 export interface CustomizationControlsPaneProps {
   selectedLocations: AppLocation[];
   onLocationsChange: (locations: AppLocation[]) => void;
-  backgroundColor?: string;
-  onBackgroundColorChange?: (color: string) => void;
+  backgroundColor?: BackgroundValue;
+  onBackgroundColorChange?: (color: BackgroundValue) => void;
   iconColor?: string;
   onIconColorChange?: (color: string) => void;
   iconSize?: number;
@@ -130,15 +132,6 @@ export function CustomizationControlsPane({
         {/* Color Controls */}
         <div className="space-y-4">
           <h3 className="text-sm font-medium">Colors</h3>
-          {onBackgroundColorChange && (
-            <ColorPicker
-              id="background-color"
-              label="Background Color"
-              value={backgroundColor}
-              onChange={onBackgroundColorChange}
-              colorType="background"
-            />
-          )}
           {onIconColorChange && !selectedIconId?.startsWith("emoji-") && (
             <ColorPicker
               id="icon-color"
@@ -146,6 +139,12 @@ export function CustomizationControlsPane({
               value={iconColor}
               onChange={onIconColorChange}
               colorType="icon"
+            />
+          )}
+          {onBackgroundColorChange && (
+            <BackgroundControls
+              value={backgroundColor}
+              onChange={onBackgroundColorChange}
             />
           )}
         </div>

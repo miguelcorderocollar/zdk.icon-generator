@@ -3,6 +3,7 @@
  */
 
 import type { AppLocation } from "./app-location";
+import type { BackgroundValue } from "../utils/gradients";
 
 /**
  * Export variant specification
@@ -118,7 +119,7 @@ export interface ExportMetadata {
   iconId: string;
   iconName: string;
   customization: {
-    backgroundColor: string;
+    backgroundColor: BackgroundValue;
     iconColor: string;
     iconSize: number;
   };

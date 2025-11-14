@@ -8,11 +8,12 @@ import { ICON_PACKS, type IconPack } from "@/src/constants/app";
 import { loadIconCatalog } from "@/src/utils/icon-catalog";
 import { getUserEmojis } from "@/src/utils/emoji-catalog";
 import { loadGeneratorState, saveGeneratorState } from "@/src/utils/local-storage";
+import type { BackgroundValue } from "@/src/utils/gradients";
 
 export interface IconGeneratorState {
   selectedLocations: AppLocation[];
   selectedIconId?: string;
-  backgroundColor: string;
+  backgroundColor: BackgroundValue;
   iconColor: string;
   searchQuery: string;
   selectedPack: IconPack;
@@ -22,7 +23,7 @@ export interface IconGeneratorState {
 export interface IconGeneratorActions {
   setSelectedLocations: (locations: AppLocation[]) => void;
   setSelectedIconId: (id: string | undefined) => void;
-  setBackgroundColor: (color: string) => void;
+  setBackgroundColor: (color: BackgroundValue) => void;
   setIconColor: (color: string) => void;
   setSearchQuery: (query: string) => void;
   setSelectedPack: (pack: IconPack) => void;
@@ -59,9 +60,13 @@ export function useIconGenerator() {
             ? (persistedState.selectedLocations as AppLocation[])
             : DEFAULT_STATE.selectedLocations,
           selectedIconId: persistedState.selectedIconId || undefined,
-          backgroundColor: typeof persistedState.backgroundColor === "string"
-            ? persistedState.backgroundColor
-            : DEFAULT_STATE.backgroundColor,
+          backgroundColor:
+            typeof persistedState.backgroundColor === "string"
+              ? persistedState.backgroundColor
+              : typeof persistedState.backgroundColor === "object" &&
+                  persistedState.backgroundColor !== null
+              ? (persistedState.backgroundColor as BackgroundValue)
+              : DEFAULT_STATE.backgroundColor,
           iconColor: typeof persistedState.iconColor === "string"
             ? persistedState.iconColor
             : DEFAULT_STATE.iconColor,
