@@ -3,7 +3,7 @@
  */
 
 import * as React from "react";
-import type { IconMetadata } from "@/src/types/icon";
+import type { IconMetadata, IconPack as IconPackType } from "@/src/types/icon";
 import { loadIconCatalog, searchIcons, filterIconsByPack, filterIconsByCategory } from "@/src/utils/icon-catalog";
 import { getFavorites, getRecentIcons } from "@/src/utils/local-storage";
 import { getUserEmojis } from "@/src/utils/emoji-catalog";
@@ -200,7 +200,7 @@ export function useIconSearch({
                 customSvgs.push({
                   id: key,
                   name: "Custom SVG",
-                  pack: "custom-svg" as IconPack,
+                  pack: "custom-svg" as IconPackType,
                   svg,
                   keywords: ["custom", "svg", "user"],
                   allowColorOverride,
