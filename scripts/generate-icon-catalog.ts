@@ -11,6 +11,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ingestZendeskGardenIcons, LICENSE as gardenLicense } from '../src/adapters/zendesk-garden';
 import { ingestFeatherIcons, LICENSE as featherLicense } from '../src/adapters/feather';
+import { ingestRemixIconIcons, LICENSE as remixiconLicense } from '../src/adapters/remixicon';
 import type { IconCatalog, IconPack } from '../src/types/icon';
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
@@ -30,10 +31,14 @@ function generateCatalog(): IconCatalog {
 
   console.log('📦 Ingesting Feather icons...');
   const featherIcons = ingestFeatherIcons(NODE_MODULES_PATH);
-  console.log(`   ✓ Found ${featherIcons.length} Feather icons\n`);
+  console.log(`   ✓ Found ${featherIcons.length} Feather icons`);
+
+  console.log('📦 Ingesting RemixIcon icons...');
+  const remixiconIcons = ingestRemixIconIcons(NODE_MODULES_PATH);
+  console.log(`   ✓ Found ${remixiconIcons.length} RemixIcon icons\n`);
 
   // Combine all icons
-  const allIcons = [...gardenIcons, ...featherIcons];
+  const allIcons = [...gardenIcons, ...featherIcons, ...remixiconIcons];
   const totalIcons = allIcons.length;
 
   // Build icon index
@@ -41,6 +46,7 @@ function generateCatalog(): IconCatalog {
   const byPack: Record<IconPack, string[]> = {
     'zendesk-garden': [],
     feather: [],
+    remixicon: [],
     emoji: [],
   };
 
@@ -59,6 +65,7 @@ function generateCatalog(): IconCatalog {
     licenses: {
       'zendesk-garden': gardenLicense,
       feather: featherLicense,
+      remixicon: remixiconLicense,
       emoji: {
         name: 'User-provided emojis',
         type: 'User Content',
@@ -97,7 +104,8 @@ function main() {
     console.log(`   📄 Output: ${OUTPUT_PATH}`);
     console.log(`   📊 Total icons: ${catalog.meta.totalIcons}`);
     console.log(`   📦 Zendesk Garden: ${catalog.byPack['zendesk-garden'].length}`);
-    console.log(`   📦 Feather: ${catalog.byPack.feather.length}\n`);
+    console.log(`   📦 Feather: ${catalog.byPack.feather.length}`);
+    console.log(`   📦 RemixIcon: ${catalog.byPack.remixicon.length}\n`);
   } catch (error) {
     console.error('❌ Error generating icon catalog:', error);
     process.exit(1);

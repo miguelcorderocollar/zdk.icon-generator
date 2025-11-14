@@ -275,12 +275,17 @@ ${gradientDef ? gradientDef + "\n" : ""}  ${backgroundElement}
 
   // Apply inherited attributes from root SVG element to the group
   // This handles Feather icons that set fill="none" and stroke attributes on the root <svg> tag
+  // Also handles RemixIcon that sets fill="currentColor" on the root <svg> tag
   const groupAttrs: string[] = [];
   
   if (inheritedFill !== undefined) {
+    const fillValue = inheritedFill.toLowerCase().trim();
     // If the root SVG had fill="none", apply it to preserve transparency
-    if (inheritedFill.toLowerCase().trim() === 'none') {
+    if (fillValue === 'none') {
       groupAttrs.push('fill="none"');
+    } else if (fillValue === 'currentcolor' || fillValue === 'current-color') {
+      // If root had fill="currentColor", apply our color (for RemixIcon)
+      groupAttrs.push(`fill="${iconColor}"`);
     }
   }
   

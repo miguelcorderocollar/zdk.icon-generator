@@ -16,6 +16,7 @@ import { addRecentIcon } from "@/src/utils/local-storage";
 import { getFavorites } from "@/src/utils/local-storage";
 import { EmojiInput } from "@/src/components/EmojiInput";
 import { CustomSvgInput } from "@/src/components/CustomSvgInput";
+import { getRemixIconCategories } from "@/src/utils/icon-catalog";
 
 export interface IconSearchPaneProps {
   searchQuery?: string;
@@ -38,16 +39,29 @@ export function IconSearchPane({
   const [isMac, setIsMac] = React.useState<boolean>(false); // Default to false to avoid hydration mismatch
   const [sortBy, setSortBy] = React.useState<SortOption>("name");
   const [favorites, setFavorites] = React.useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
+  const [remixiconCategories, setRemixiconCategories] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     setIsMac(navigator.platform.toUpperCase().indexOf("MAC") >= 0);
     setFavorites(getFavorites());
   }, []);
 
+  // Load RemixIcon categories when RemixIcon pack is selected
+  React.useEffect(() => {
+    if (selectedPack === ICON_PACKS.REMIXICON) {
+      getRemixIconCategories().then(setRemixiconCategories).catch(console.error);
+    } else {
+      // Reset category when switching away from RemixIcon
+      setSelectedCategory(null);
+    }
+  }, [selectedPack]);
+
   // Use the icon search hook
   const { icons, isLoading, error } = useIconSearch({
     searchQuery,
     selectedPack,
+    selectedCategory,
     sortBy,
   });
 
@@ -187,11 +201,35 @@ export function IconSearchPane({
               <SelectItem value={ICON_PACKS.ALL}>All</SelectItem>
               <SelectItem value={ICON_PACKS.GARDEN}>Garden</SelectItem>
               <SelectItem value={ICON_PACKS.FEATHER}>Feather</SelectItem>
+              <SelectItem value={ICON_PACKS.REMIXICON}>RemixIcon</SelectItem>
               <SelectItem value={ICON_PACKS.EMOJI}>Emoji</SelectItem>
               <SelectItem value={ICON_PACKS.CUSTOM_SVG}>Custom SVG</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
+        {/* Category Selector (only for RemixIcon) */}
+        {selectedPack === ICON_PACKS.REMIXICON && remixiconCategories.length > 0 && (
+          <div className="space-y-2">
+            <Label htmlFor="category-select">Category</Label>
+            <Select 
+              value={selectedCategory || "all"} 
+              onValueChange={(value) => setSelectedCategory(value === "all" ? null : value)}
+            >
+              <SelectTrigger id="category-select" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {remixiconCategories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {/* Content based on selected pack */}
         <div className="flex-1 min-h-0 overflow-hidden">

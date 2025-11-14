@@ -4,7 +4,7 @@
 
 import * as React from "react";
 import type { IconMetadata } from "@/src/types/icon";
-import { loadIconCatalog, searchIcons, filterIconsByPack } from "@/src/utils/icon-catalog";
+import { loadIconCatalog, searchIcons, filterIconsByPack, filterIconsByCategory } from "@/src/utils/icon-catalog";
 import { getFavorites, getRecentIcons } from "@/src/utils/local-storage";
 import { getUserEmojis } from "@/src/utils/emoji-catalog";
 import { ICON_PACKS, type IconPack } from "@/src/constants/app";
@@ -15,6 +15,7 @@ export type SortOption = "name" | "recent" | "favorites" | "pack";
 export interface UseIconSearchOptions {
   searchQuery: string;
   selectedPack: IconPack;
+  selectedCategory?: string | null;
   sortBy?: SortOption;
 }
 
@@ -80,6 +81,7 @@ function sortIcons(
 export function useIconSearch({
   searchQuery,
   selectedPack,
+  selectedCategory,
   sortBy = "name",
 }: UseIconSearchOptions): UseIconSearchResult {
   const [icons, setIcons] = React.useState<IconMetadata[]>([]);
@@ -154,7 +156,7 @@ export function useIconSearch({
   React.useEffect(() => {
     let cancelled = false;
     const normalizedQuery = debouncedQuery.trim();
-    const cacheKey = `${normalizedQuery.toLowerCase()}::${selectedPack}`;
+    const cacheKey = `${normalizedQuery.toLowerCase()}::${selectedPack}::${selectedCategory || 'all'}`;
     const cached = cacheRef.current.get(cacheKey);
 
     if (cached) {
@@ -261,6 +263,11 @@ export function useIconSearch({
           results = [...results, ...filteredEmojis, ...filteredCustomSvgs];
         }
 
+        // Filter by category if RemixIcon is selected and a category is chosen
+        if (selectedPack === ICON_PACKS.REMIXICON && selectedCategory) {
+          results = filterIconsByCategory(results, selectedCategory);
+        }
+
         // Cache the filtered results (before sorting)
         if (!cancelled && currentRequestId === requestIdRef.current) {
           cacheRef.current.set(cacheKey, results);
@@ -289,7 +296,7 @@ export function useIconSearch({
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery, selectedPack, sortBy, refreshKey]);
+  }, [debouncedQuery, selectedPack, selectedCategory, sortBy, refreshKey]);
 
   // Re-sort when sortBy changes but results are already cached
   React.useEffect(() => {

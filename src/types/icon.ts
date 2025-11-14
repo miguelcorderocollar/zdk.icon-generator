@@ -1,7 +1,7 @@
 /**
  * Icon pack metadata
  */
-export type IconPack = 'zendesk-garden' | 'feather' | 'emoji' | 'custom-svg';
+export type IconPack = 'zendesk-garden' | 'feather' | 'remixicon' | 'emoji' | 'custom-svg';
 
 /**
  * Icon pack license information
@@ -28,6 +28,8 @@ export interface IconMetadata {
   svg: string;
   /** Searchable keywords */
   keywords: string[];
+  /** Category (e.g., for RemixIcon: 'Arrows', 'Buildings', etc.) */
+  category?: string;
   /** Original size if applicable (e.g., 12, 16, 24) */
   size?: number;
   /** Whether this icon is rasterized (e.g., emoji) and cannot have colors customized */

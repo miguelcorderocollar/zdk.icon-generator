@@ -11,6 +11,7 @@ export function formatPackName(pack: IconPack | string): string {
   const packMap: Record<string, string> = {
     "zendesk-garden": "Garden",
     "feather": "Feather",
+    "remixicon": "RemixIcon",
     "emoji": "Emoji",
   };
   return packMap[pack] || pack;

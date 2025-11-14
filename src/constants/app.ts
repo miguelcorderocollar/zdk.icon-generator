@@ -12,6 +12,7 @@ export const ICON_PACKS = {
   ALL: "all",
   GARDEN: "garden",
   FEATHER: "feather",
+  REMIXICON: "remixicon",
   EMOJI: "emoji",
   CUSTOM_SVG: "custom-svg",
 } as const;

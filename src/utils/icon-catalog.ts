@@ -17,7 +17,8 @@ function buildSearchIndex(catalog: IconCatalog) {
 
   searchIndexCache = Object.values(catalog.icons).map((icon) => {
     const keywordsText = icon.keywords.join(" ");
-    const searchText = `${icon.name} ${icon.id} ${keywordsText}`.toLowerCase();
+    const categoryText = icon.category ? ` ${icon.category}` : "";
+    const searchText = `${icon.name} ${icon.id} ${keywordsText}${categoryText}`.toLowerCase();
 
     return {
       icon,
@@ -69,6 +70,7 @@ export async function getIconsByPack(pack: IconPack): Promise<IconMetadata[]> {
   const packMap: Record<string, string> = {
     "garden": "zendesk-garden",
     "feather": "feather",
+    "remixicon": "remixicon",
   };
   
   const catalogPackName = packMap[pack] || pack;
@@ -142,6 +144,7 @@ export async function filterIconsByPack(
   const packMap: Record<string, string> = {
     "garden": "zendesk-garden",
     "feather": "feather",
+    "remixicon": "remixicon",
     "emoji": "emoji",
     "custom-svg": "custom-svg",
     "all": "all", // This won't match any icon.pack, but that's fine
@@ -160,6 +163,39 @@ export async function filterIconsByPack(
 export async function getPackLicense(pack: IconPack) {
   const catalog = await loadIconCatalog();
   return catalog.licenses[pack];
+}
+
+/**
+ * Get all RemixIcon categories
+ */
+export async function getRemixIconCategories(): Promise<string[]> {
+  const catalog = await loadIconCatalog();
+  const categories = new Set<string>();
+  
+  // Get all RemixIcon icons and extract their categories
+  const remixiconIds = catalog.byPack.remixicon || [];
+  for (const id of remixiconIds) {
+    const icon = catalog.icons[id];
+    if (icon && icon.category) {
+      categories.add(icon.category);
+    }
+  }
+  
+  // Sort categories alphabetically
+  return Array.from(categories).sort();
+}
+
+/**
+ * Filter icons by category (for RemixIcon)
+ */
+export function filterIconsByCategory(
+  icons: IconMetadata[],
+  category: string | null
+): IconMetadata[] {
+  if (!category) {
+    return icons;
+  }
+  return icons.filter((icon) => icon.category === category);
 }
 
 /**
