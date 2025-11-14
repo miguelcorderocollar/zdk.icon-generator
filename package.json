@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "generate-icons": "tsx scripts/generate-icon-catalog.ts",
-    "generate-favicons": "python3 scripts/generate-favicons.py"
+    "generate-icons": "tsx scripts/generate-icon-catalog.ts"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
