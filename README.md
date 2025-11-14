@@ -100,7 +100,7 @@ The `generate-icons` script processes icons from installed icon packs and genera
 
 ## License
 
-- **Project code**: Add an explicit license (e.g., MIT or Apache-2.0) before release. Until then, all rights reserved.
+- **Project code**: MIT License - See [LICENSE](LICENSE) file for details.
 - **Bundled icon packs**: Respect original licenses; include copies in the repository and reference them within the app as needed.
 
 If you introduce new third-party assets or libraries, document their licenses here and ensure they are compatible with Zendesk marketplace distribution.
