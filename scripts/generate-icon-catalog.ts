@@ -48,6 +48,7 @@ function generateCatalog(): IconCatalog {
     feather: [],
     remixicon: [],
     emoji: [],
+    'custom-svg': [],
   };
 
   for (const icon of allIcons) {
@@ -68,6 +69,11 @@ function generateCatalog(): IconCatalog {
       remixicon: remixiconLicense,
       emoji: {
         name: 'User-provided emojis',
+        type: 'User Content',
+        url: '',
+      },
+      'custom-svg': {
+        name: 'User-provided custom SVG',
         type: 'User Content',
         url: '',
       },
