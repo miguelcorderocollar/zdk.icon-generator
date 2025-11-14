@@ -92,11 +92,13 @@ function generateId(baseName: string, variant: string, size?: number): string {
 
 /**
  * Read and process Zendesk Garden icons from node_modules
+ * Deduplicates icons by base name and variant, preferring 16px over 12px
  */
 export function ingestZendeskGardenIcons(
   nodeModulesPath: string
 ): IconMetadata[] {
   const icons: IconMetadata[] = [];
+  const iconMap = new Map<string, IconMetadata>();
   const gardenPath = path.join(nodeModulesPath, '@zendeskgarden/svg-icons', 'src');
 
   if (!fs.existsSync(gardenPath)) {
@@ -104,8 +106,9 @@ export function ingestZendeskGardenIcons(
     return icons;
   }
 
-  // Process both 12px and 16px directories
-  const sizeDirs = ['12', '16'];
+  // Process 16px first (preferred), then 12px (as fallback)
+  // This ensures we prefer 16px when duplicates exist
+  const sizeDirs = ['16', '12'];
   
   for (const sizeDir of sizeDirs) {
     const sizePath = path.join(gardenPath, sizeDir);
@@ -125,6 +128,14 @@ export function ingestZendeskGardenIcons(
         const size = extractSize(sizePath);
         const keywords = extractKeywords(baseName);
         
+        // Create a unique key for deduplication (baseName + variant, without size)
+        const dedupeKey = `${baseName}-${variant}`;
+        
+        // Skip if we already have this icon (prefer 16px which we process first)
+        if (iconMap.has(dedupeKey)) {
+          continue;
+        }
+        
         // Add variant and size to keywords for better searchability
         if (variant !== 'default') {
           keywords.push(variant);
@@ -143,13 +154,14 @@ export function ingestZendeskGardenIcons(
           size,
         };
 
-        icons.push(icon);
+        iconMap.set(dedupeKey, icon);
       } catch (error) {
         console.error(`Error processing ${file}:`, error);
       }
     }
   }
 
-  return icons;
+  // Convert map values to array
+  return Array.from(iconMap.values());
 }
 
