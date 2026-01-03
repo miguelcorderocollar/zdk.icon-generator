@@ -66,9 +66,9 @@ test.describe("Customization Flow", () => {
   });
 
   test("preview updates when colors change", async ({ page }) => {
-    // Get the preview pane
-    const previewPane = page.getByText("Preview").locator("..");
-    await expect(previewPane).toBeVisible();
+    // Get the preview pane by its exact card title
+    const previewTitle = page.getByText("Preview", { exact: true });
+    await expect(previewTitle).toBeVisible();
 
     // Change a color and verify preview is still visible
     const hexInputs = page.locator('input[placeholder="#ffffff"]').first();
@@ -77,7 +77,7 @@ test.describe("Customization Flow", () => {
       await hexInputs.fill("#123456");
       
       // Preview should still be visible
-      await expect(page.getByText("Preview")).toBeVisible();
+      await expect(previewTitle).toBeVisible();
     }
   });
 
