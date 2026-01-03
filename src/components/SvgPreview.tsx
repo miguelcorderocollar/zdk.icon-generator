@@ -13,6 +13,15 @@ import { useDebouncedValue } from "../hooks/use-debounced-value";
 import type { BackgroundValue } from "../utils/gradients";
 import { DEFAULT_COLORS } from "@/src/constants/app";
 
+/**
+ * Zendesk location SVG filenames that require transparent backgrounds
+ */
+const ZENDESK_LOCATION_SVG_FILES = [
+  "icon_top_bar.svg",
+  "icon_ticket_editor.svg",
+  "icon_nav_bar.svg",
+];
+
 export interface SvgPreviewProps {
   svgFiles: string[];
   iconId?: string;
@@ -39,6 +48,7 @@ export function SvgPreview({ svgFiles, iconId, state }: SvgPreviewProps) {
   }, [JSON.stringify(state?.backgroundColor)]);
   const debouncedIconColor = useDebouncedValue(state?.iconColor ?? "", 300);
   const debouncedIconSize = useDebouncedValue(state?.iconSize ?? 64, 300);
+  const debouncedSvgIconSize = useDebouncedValue(state?.svgIconSize ?? 64, 300);
 
   // Create a debounced state object for rendering
   const debouncedState = React.useMemo(() => {
@@ -48,8 +58,9 @@ export function SvgPreview({ svgFiles, iconId, state }: SvgPreviewProps) {
       backgroundColor: debouncedBackgroundColor,
       iconColor: debouncedIconColor,
       iconSize: debouncedIconSize,
+      svgIconSize: debouncedSvgIconSize,
     };
-  }, [state, debouncedBackgroundColor, debouncedIconColor, debouncedIconSize]);
+  }, [state, debouncedBackgroundColor, debouncedIconColor, debouncedIconSize, debouncedSvgIconSize]);
 
   // Debounce svgFiles array changes (when locations change)
   // Use join to create a stable string for comparison
@@ -86,12 +97,18 @@ export function SvgPreview({ svgFiles, iconId, state }: SvgPreviewProps) {
           const displaySize = SVG_SPECS.DISPLAY_SIZE;
           const previewSize = 64; // Half size for preview visibility
 
-          // Map iconSize (48-200px) to padding (0-6px range)
-          // Higher iconSize = less padding = larger icon within the artboard
+          // Map svgIconSize (48-300px) to padding (6px to -6px range)
+          // Higher svgIconSize = less padding = larger icon within the artboard
+          // Negative padding makes icon larger than artboard (overflow)
           const minSize = 48;
-          const maxSize = 200;
+          const maxSize = 300;
           const maxPadding = 6;
-          const padding = Math.max(0, Math.min(maxPadding, maxPadding - (debouncedState.iconSize - minSize) / (maxSize - minSize) * maxPadding));
+          const minPadding = -6; // Allow overflow
+          const padding = maxPadding - (debouncedState.svgIconSize - minSize) / (maxSize - minSize) * (maxPadding - minPadding);
+
+          // Check if this is a Zendesk location SVG (top_bar, ticket_editor, nav_bar)
+          // These require transparent backgrounds and no hardcoded fill colors
+          const isZendeskLocationSvg = ZENDESK_LOCATION_SVG_FILES.includes(filename);
 
           const svgString = renderSvg({
             icon,
@@ -100,6 +117,7 @@ export function SvgPreview({ svgFiles, iconId, state }: SvgPreviewProps) {
             size: artboardSize,
             padding,
             outputSize: previewSize, // Use 64px output for preview
+            zendeskLocationMode: isZendeskLocationSvg,
           });
 
           const blob = new Blob([svgString], { type: "image/svg+xml" });
@@ -142,6 +160,8 @@ export function SvgPreview({ svgFiles, iconId, state }: SvgPreviewProps) {
       <div className="space-y-4 pr-4">
         {svgFiles.map((filename) => {
           const svgUrl = svgUrls.get(filename);
+          const isZendeskLocationSvg = ZENDESK_LOCATION_SVG_FILES.includes(filename);
+          
           return (
             <div key={filename} className="space-y-2">
               <div className="flex items-center justify-between">
@@ -150,16 +170,28 @@ export function SvgPreview({ svgFiles, iconId, state }: SvgPreviewProps) {
                   {SVG_SPECS.DISPLAY_SIZE}×{SVG_SPECS.DISPLAY_SIZE}
                 </span>
               </div>
-              <div className="flex aspect-square w-full max-w-[64px] items-center justify-center rounded-lg border-2 border-dashed bg-muted/20 p-2">
+              {/* Use checkered background for Zendesk location SVGs to show transparency */}
+              {/* Container matches SVG output size exactly (64×64) - no padding to avoid clipping */}
+              <div 
+                className={`flex w-[64px] h-[64px] items-center justify-center rounded-lg border-2 border-dashed ${
+                  isZendeskLocationSvg 
+                    ? "bg-[repeating-conic-gradient(#e5e5e5_0%_25%,#ffffff_0%_50%)] bg-[length:8px_8px]" 
+                    : "bg-muted/20"
+                }`}
+              >
                 {isLoading ? (
-                  <span className="text-xs text-muted-foreground">Generating preview...</span>
+                  <span className="text-xs text-muted-foreground text-center px-1">Loading...</span>
                 ) : svgUrl ? (
-                  <img src={svgUrl} alt={filename} className="max-w-full max-h-full" />
+                  <img src={svgUrl} alt={filename} className="w-[64px] h-[64px]" />
                 ) : (
-                  <span className="text-xs text-muted-foreground">Preview will appear here</span>
+                  <span className="text-xs text-muted-foreground text-center px-1">Preview</span>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">{SVG_SPECS.DESCRIPTION}</p>
+              <p className="text-xs text-muted-foreground">
+                {isZendeskLocationSvg 
+                  ? "Transparent background (Zendesk applies styling)" 
+                  : SVG_SPECS.DESCRIPTION}
+              </p>
             </div>
           );
         })}

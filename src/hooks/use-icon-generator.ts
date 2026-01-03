@@ -17,7 +17,10 @@ export interface IconGeneratorState {
   iconColor: string;
   searchQuery: string;
   selectedPack: IconPack;
+  /** Icon size for PNG exports */
   iconSize: number;
+  /** Icon size for SVG exports (top_bar, ticket_editor, nav_bar) */
+  svgIconSize: number;
 }
 
 export interface IconGeneratorActions {
@@ -28,6 +31,7 @@ export interface IconGeneratorActions {
   setSearchQuery: (query: string) => void;
   setSelectedPack: (pack: IconPack) => void;
   setIconSize: (size: number) => void;
+  setSvgIconSize: (size: number) => void;
 }
 
 const DEFAULT_STATE: IconGeneratorState = {
@@ -38,6 +42,7 @@ const DEFAULT_STATE: IconGeneratorState = {
   searchQuery: "",
   selectedPack: ICON_PACKS.ALL,
   iconSize: 123,
+  svgIconSize: 123,
 };
 
 export function useIconGenerator() {
@@ -77,6 +82,9 @@ export function useIconGenerator() {
           iconSize: typeof persistedState.iconSize === "number" && persistedState.iconSize > 0
             ? persistedState.iconSize
             : DEFAULT_STATE.iconSize,
+          svgIconSize: typeof persistedState.svgIconSize === "number" && persistedState.svgIconSize > 0
+            ? persistedState.svgIconSize
+            : DEFAULT_STATE.svgIconSize,
         };
         hasPersistedIcon = !!restoredState.selectedIconId;
         setState(restoredState);
@@ -118,6 +126,7 @@ export function useIconGenerator() {
       iconColor: state.iconColor,
       selectedPack: state.selectedPack,
       iconSize: state.iconSize,
+      svgIconSize: state.svgIconSize,
     });
   }, [
     hasInitialized,
@@ -128,6 +137,7 @@ export function useIconGenerator() {
     state.iconColor,
     state.selectedPack,
     state.iconSize,
+    state.svgIconSize,
   ]);
 
   const actions: IconGeneratorActions = React.useMemo(
@@ -146,6 +156,8 @@ export function useIconGenerator() {
         setState((prev) => ({ ...prev, selectedPack: pack })),
       setIconSize: (size) =>
         setState((prev) => ({ ...prev, iconSize: size })),
+      setSvgIconSize: (size) =>
+        setState((prev) => ({ ...prev, svgIconSize: size })),
     }),
     []
   );

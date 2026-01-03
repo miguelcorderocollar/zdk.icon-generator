@@ -29,6 +29,13 @@ export interface SvgRenderOptions {
   padding?: number;
   /** Output width/height attribute (defaults to artboard size) */
   outputSize?: number;
+  /**
+   * When true, renders SVG for Zendesk location icons (top_bar, ticket_editor, nav_bar).
+   * - No background element (transparent)
+   * - No hardcoded fill colors (preserves currentColor for Zendesk styling)
+   * This matches Zendesk requirements: https://developer.zendesk.com/documentation/apps/app-developer-guide/styling/
+   */
+  zendeskLocationMode?: boolean;
 }
 
 /**
@@ -190,6 +197,7 @@ export function renderSvg(options: SvgRenderOptions): string {
     size,
     padding = 0,
     outputSize,
+    zendeskLocationMode = false,
   } = options;
 
   const { 
@@ -203,16 +211,20 @@ export function renderSvg(options: SvgRenderOptions): string {
     isRasterized,
   } = parseSvg(icon.svg);
   
-  // Skip color transformation for rasterized icons (emojis) or if color override is disabled
-  // Also check icon metadata flag as fallback
+  // Skip color transformation for:
+  // - Rasterized icons (emojis)
+  // - Icons with color override disabled
+  // - Zendesk location mode (top_bar, ticket_editor, nav_bar) - preserves currentColor for Zendesk styling
   const shouldSkipColorTransform = 
+    zendeskLocationMode ||
     isRasterized || 
     icon.isRasterized || 
     (icon.allowColorOverride === false);
   const coloredContent = shouldSkipColorTransform ? content : applySvgColor(content, iconColor);
 
   // Calculate icon size within padded area
-  const effectivePadding = Math.max(0, Math.min(padding, size / 2));
+  // Allow negative padding for larger icons that overflow the artboard
+  const effectivePadding = Math.min(padding, size / 2);
   const iconSize = size - effectivePadding * 2;
   const viewBoxParts = viewBox.split(/\s+/).map(Number);
   const vbMinX = viewBoxParts[0] || 0;
@@ -221,15 +233,18 @@ export function renderSvg(options: SvgRenderOptions): string {
   const vbHeight = viewBoxParts[3] || 24;
 
   // Render background (solid color or gradient)
-  let backgroundElement: string;
+  // In Zendesk location mode, skip background entirely for transparent SVG
+  let backgroundElement: string = "";
   let gradientDef: string = "";
 
-  if (isGradient(backgroundColor)) {
-    const gradientId = `bg-gradient-${Math.random().toString(36).substr(2, 9)}`;
-    gradientDef = gradientToSvgDef(backgroundColor, gradientId, size);
-    backgroundElement = `<rect width="${size}" height="${size}" fill="url(#${gradientId})"/>`;
-  } else {
-    backgroundElement = `<rect width="${size}" height="${size}" fill="${backgroundColor}"/>`;
+  if (!zendeskLocationMode) {
+    if (isGradient(backgroundColor)) {
+      const gradientId = `bg-gradient-${Math.random().toString(36).substr(2, 9)}`;
+      gradientDef = gradientToSvgDef(backgroundColor, gradientId, size);
+      backgroundElement = `<rect width="${size}" height="${size}" fill="url(#${gradientId})"/>`;
+    } else {
+      backgroundElement = `<rect width="${size}" height="${size}" fill="${backgroundColor}"/>`;
+    }
   }
 
   // For rasterized icons (emojis), render differently - embed the image directly
@@ -256,9 +271,13 @@ export function renderSvg(options: SvgRenderOptions): string {
       
       const finalSize = outputSize ?? size;
 
+      // Build background elements string (empty in Zendesk location mode)
+      const rasterBgElements = backgroundElement 
+        ? `${gradientDef ? gradientDef + "\n" : ""}  ${backgroundElement}\n` 
+        : "";
+
       return `<svg width="${finalSize}" height="${finalSize}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-${gradientDef ? gradientDef + "\n" : ""}  ${backgroundElement}
-  <image href="${href}" width="${scaledWidth}" height="${scaledHeight}" x="${iconX}" y="${iconY}"/>
+${rasterBgElements}  <image href="${href}" width="${scaledWidth}" height="${scaledHeight}" x="${iconX}" y="${iconY}"/>
 </svg>`;
     }
   }
@@ -284,14 +303,24 @@ ${gradientDef ? gradientDef + "\n" : ""}  ${backgroundElement}
     if (fillValue === 'none') {
       groupAttrs.push('fill="none"');
     } else if (fillValue === 'currentcolor' || fillValue === 'current-color') {
-      // If root had fill="currentColor", apply our color (for RemixIcon)
-      groupAttrs.push(`fill="${iconColor}"`);
+      // In Zendesk location mode, preserve currentColor for Zendesk's CSS styling
+      // Otherwise, apply our icon color
+      if (zendeskLocationMode) {
+        groupAttrs.push('fill="currentColor"');
+      } else {
+        groupAttrs.push(`fill="${iconColor}"`);
+      }
     }
   }
   
   if (inheritedStroke !== undefined && inheritedStroke.toLowerCase().trim() === 'currentcolor') {
-    // If root had stroke="currentColor", apply our color
-    groupAttrs.push(`stroke="${iconColor}"`);
+    // In Zendesk location mode, preserve currentColor for Zendesk's CSS styling
+    // Otherwise, apply our icon color
+    if (zendeskLocationMode) {
+      groupAttrs.push('stroke="currentColor"');
+    } else {
+      groupAttrs.push(`stroke="${iconColor}"`);
+    }
   }
   
   if (inheritedStrokeWidth !== undefined) {
@@ -321,9 +350,13 @@ ${gradientDef ? gradientDef + "\n" : ""}  ${backgroundElement}
 
   const finalSize = outputSize ?? size;
 
+  // Build background elements string (empty in Zendesk location mode)
+  const bgElements = backgroundElement 
+    ? `${gradientDef ? gradientDef + "\n" : ""}  ${backgroundElement}\n` 
+    : "";
+
   return `<svg width="${finalSize}" height="${finalSize}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-${gradientDef ? gradientDef + "\n" : ""}  ${backgroundElement}
-  <g transform="${combinedTransform}"${groupAttrString}>
+${bgElements}  <g transform="${combinedTransform}"${groupAttrString}>
     ${adjustedContent}
   </g>
 </svg>`;
@@ -415,6 +448,16 @@ export async function renderPng(options: PngRenderOptions): Promise<Blob> {
 
 
 /**
+ * Zendesk location SVG filenames that require transparent backgrounds
+ * and no hardcoded fill colors (uses currentColor for Zendesk CSS styling)
+ */
+const ZENDESK_LOCATION_SVG_FILES = [
+  "icon_top_bar.svg",
+  "icon_ticket_editor.svg",
+  "icon_nav_bar.svg",
+];
+
+/**
  * Generate all export assets from state
  */
 export async function generateExportAssets(
@@ -428,9 +471,23 @@ export async function generateExportAssets(
     if (variant.format === "svg") {
       // SVG rendering
       const artboardSize = SVG_SPECS.PADDED_SIZE;
+      
+      // Check if this is a Zendesk location SVG (top_bar, ticket_editor, nav_bar)
+      // These require transparent backgrounds and no hardcoded fill colors
+      const isZendeskLocationSvg = ZENDESK_LOCATION_SVG_FILES.includes(variant.filename);
+
+      // Use svgIconSize for SVG exports to control icon density within the artboard
+      // Map svgIconSize (48-300px) to padding (6px to -6px range)
+      // Negative padding makes icon larger than artboard (overflow)
+      const minSize = 48;
+      const maxSize = 300;
+      const maxPadding = 6;
+      const minPadding = -6; // Allow overflow
+      const svgSize = state.svgIconSize ?? state.iconSize;
+      const padding = maxPadding - (svgSize - minSize) / (maxSize - minSize) * (maxPadding - minPadding);
+      
       const requestedSize = Math.max(variant.width, variant.height);
       const displaySize = Math.min(requestedSize, artboardSize);
-      const padding = Math.max(0, (artboardSize - displaySize) / 2);
 
       const svgString = renderSvg({
         icon,
@@ -439,6 +496,7 @@ export async function generateExportAssets(
         size: artboardSize,
         padding,
         outputSize: displaySize,
+        zendeskLocationMode: isZendeskLocationSvg,
       });
       const blob = new Blob([svgString], { type: "image/svg+xml" });
       assets.set(variant.filename, blob);

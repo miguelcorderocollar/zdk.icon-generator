@@ -16,6 +16,7 @@ import { DEFAULT_COLORS, ICON_GRID } from "@/src/constants/app";
 import { useDebouncedValue } from "@/src/hooks/use-debounced-value";
 import type { AppLocation } from "@/src/types/app-location";
 import type { BackgroundValue } from "@/src/utils/gradients";
+import { hasSvgRequirements } from "@/src/utils/locations";
 
 export interface CustomizationControlsPaneProps {
   selectedLocations: AppLocation[];
@@ -26,6 +27,8 @@ export interface CustomizationControlsPaneProps {
   onIconColorChange?: (color: string) => void;
   iconSize?: number;
   onIconSizeChange?: (size: number) => void;
+  svgIconSize?: number;
+  onSvgIconSizeChange?: (size: number) => void;
   selectedIconId?: string;
 }
 
@@ -38,12 +41,22 @@ export function CustomizationControlsPane({
   onIconColorChange,
   iconSize = ICON_GRID.DEFAULT_ICON_SIZE,
   onIconSizeChange,
+  svgIconSize = ICON_GRID.DEFAULT_ICON_SIZE,
+  onSvgIconSizeChange,
   selectedIconId,
 }: CustomizationControlsPaneProps) {
+  // Check if SVG files are required for selected locations
+  const hasSvgFiles = hasSvgRequirements(selectedLocations);
+
   // Debounce icon size changes to prevent lag while dragging slider
   const [localIconSize, setLocalIconSize] = React.useState(iconSize);
   const debouncedIconSize = useDebouncedValue(localIconSize, 300);
   const lastPropSizeRef = React.useRef(iconSize);
+
+  // Debounce SVG icon size changes
+  const [localSvgIconSize, setLocalSvgIconSize] = React.useState(svgIconSize);
+  const debouncedSvgIconSize = useDebouncedValue(localSvgIconSize, 300);
+  const lastPropSvgSizeRef = React.useRef(svgIconSize);
 
   // Update parent when debounced value changes (but only if it's different from prop)
   React.useEffect(() => {
@@ -53,6 +66,14 @@ export function CustomizationControlsPane({
     }
   }, [debouncedIconSize, onIconSizeChange]);
 
+  // Update parent when debounced SVG size changes
+  React.useEffect(() => {
+    if (onSvgIconSizeChange && debouncedSvgIconSize !== lastPropSvgSizeRef.current) {
+      lastPropSvgSizeRef.current = debouncedSvgIconSize;
+      onSvgIconSizeChange(debouncedSvgIconSize);
+    }
+  }, [debouncedSvgIconSize, onSvgIconSizeChange]);
+
   // Sync local state when prop changes externally (but only if it's actually different)
   React.useEffect(() => {
     if (iconSize !== lastPropSizeRef.current) {
@@ -61,12 +82,24 @@ export function CustomizationControlsPane({
     }
   }, [iconSize]);
 
+  // Sync local SVG size state when prop changes externally
+  React.useEffect(() => {
+    if (svgIconSize !== lastPropSvgSizeRef.current) {
+      lastPropSvgSizeRef.current = svgIconSize;
+      setLocalSvgIconSize(svgIconSize);
+    }
+  }, [svgIconSize]);
+
   const handleLocationsChange = (values: string[]) => {
     onLocationsChange(values as AppLocation[]);
   };
 
   const handleIconSizeChange = (value: number) => {
     setLocalIconSize(value);
+  };
+
+  const handleSvgIconSizeChange = (value: number) => {
+    setLocalSvgIconSize(value);
   };
 
   return (
@@ -113,7 +146,7 @@ export function CustomizationControlsPane({
             <h3 className="text-sm font-medium">Icon Size</h3>
             <EffectSlider
               id="icon-size"
-              label="Size"
+              label={hasSvgFiles ? "PNG Size" : "Size"}
               value={localIconSize}
               onChange={handleIconSizeChange}
               min={ICON_GRID.MIN_ICON_SIZE}
@@ -122,8 +155,27 @@ export function CustomizationControlsPane({
               unit="px"
             />
             <p className="text-xs text-muted-foreground">
-              Controls the size of the icon within the canvas. The exported PNG files will still be the correct dimensions (320×320 and 128×128).
+              Controls the size of the icon within the PNG canvas. Exported files are 320×320 and 128×128.
             </p>
+            
+            {/* SVG Icon Size - only shown when SVG locations are selected */}
+            {hasSvgFiles && onSvgIconSizeChange && (
+              <>
+                <EffectSlider
+                  id="svg-icon-size"
+                  label="SVG Size"
+                  value={localSvgIconSize}
+                  onChange={handleSvgIconSizeChange}
+                  min={ICON_GRID.MIN_ICON_SIZE}
+                  max={300}
+                  step={4}
+                  unit="px"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Controls the size of the icon within SVG files (top bar, ticket editor, nav bar).
+                </p>
+              </>
+            )}
           </div>
         )}
 

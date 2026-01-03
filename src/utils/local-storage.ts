@@ -160,6 +160,7 @@ export interface PersistedGeneratorState {
   iconColor: string;
   selectedPack: string;
   iconSize: number;
+  svgIconSize?: number;
 }
 
 /**
