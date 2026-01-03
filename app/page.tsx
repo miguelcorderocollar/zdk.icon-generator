@@ -157,6 +157,8 @@ export default function Home() {
               onIconColorChange={actions.setIconColor}
               iconSize={state.iconSize}
               onIconSizeChange={actions.setIconSize}
+              svgIconSize={state.svgIconSize}
+              onSvgIconSizeChange={actions.setSvgIconSize}
               selectedIconId={state.selectedIconId}
             />
           </div>
