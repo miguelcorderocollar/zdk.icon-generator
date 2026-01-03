@@ -56,6 +56,110 @@ function isRasterizedSvg(content: string): boolean {
 }
 
 /**
+ * Bounding box result from visual content analysis
+ */
+interface VisualBoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** Center X of the visual content */
+  centerX: number;
+  /** Center Y of the visual content */
+  centerY: number;
+}
+
+/**
+ * Calculate the visual bounding box of SVG content using the browser's getBBox() API.
+ * This accounts for the actual rendered content position, not just the viewBox.
+ * 
+ * Some icon libraries (e.g., Zendesk Garden) have icons where visual content is
+ * intentionally not centered within the viewBox (for pixel-perfect rendering at small sizes).
+ * This function detects such cases and returns the true visual bounds.
+ * 
+ * @param svgContent - The inner SVG content (paths, circles, etc.)
+ * @param viewBoxWidth - The viewBox width
+ * @param viewBoxHeight - The viewBox height
+ * @param inheritedAttrs - Optional inherited attributes from the root SVG element
+ * @returns The visual bounding box, or null if calculation fails
+ */
+export function getVisualBoundingBox(
+  svgContent: string,
+  viewBoxWidth: number,
+  viewBoxHeight: number,
+  inheritedAttrs?: {
+    fill?: string;
+    stroke?: string;
+    strokeWidth?: string;
+  }
+): VisualBoundingBox | null {
+  // Check if we're in a browser environment with DOM support
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  try {
+    // Create a temporary hidden SVG element to measure the content
+    const svgNS = "http://www.w3.org/2000/svg";
+    const tempSvg = document.createElementNS(svgNS, "svg");
+    tempSvg.setAttribute("width", String(viewBoxWidth));
+    tempSvg.setAttribute("height", String(viewBoxHeight));
+    tempSvg.setAttribute("viewBox", `0 0 ${viewBoxWidth} ${viewBoxHeight}`);
+    tempSvg.style.position = "absolute";
+    tempSvg.style.visibility = "hidden";
+    tempSvg.style.pointerEvents = "none";
+    
+    // Create a group to hold the content and apply inherited attributes
+    const group = document.createElementNS(svgNS, "g");
+    
+    // Apply inherited attributes that affect bounding box
+    if (inheritedAttrs?.fill) {
+      group.setAttribute("fill", inheritedAttrs.fill);
+    }
+    if (inheritedAttrs?.stroke) {
+      group.setAttribute("stroke", inheritedAttrs.stroke);
+    }
+    if (inheritedAttrs?.strokeWidth) {
+      group.setAttribute("stroke-width", inheritedAttrs.strokeWidth);
+    }
+    
+    group.innerHTML = svgContent;
+    tempSvg.appendChild(group);
+    
+    // Append to document to enable getBBox()
+    document.body.appendChild(tempSvg);
+    
+    // Get the bounding box of the content group
+    const bbox = group.getBBox();
+    
+    // Clean up
+    document.body.removeChild(tempSvg);
+    
+    // Account for stroke width extending beyond path bounds
+    // getBBox() returns geometric bounds, not visual bounds with strokes
+    const strokeWidth = inheritedAttrs?.strokeWidth 
+      ? parseFloat(inheritedAttrs.strokeWidth) 
+      : 0;
+    const strokePadding = strokeWidth / 2;
+    
+    const visualBox: VisualBoundingBox = {
+      x: bbox.x - strokePadding,
+      y: bbox.y - strokePadding,
+      width: bbox.width + strokeWidth,
+      height: bbox.height + strokeWidth,
+      centerX: bbox.x + bbox.width / 2,
+      centerY: bbox.y + bbox.height / 2,
+    };
+    
+    return visualBox;
+  } catch (error) {
+    // If getBBox fails (e.g., empty content, invalid SVG), return null
+    console.warn("Failed to calculate visual bounding box:", error);
+    return null;
+  }
+}
+
+/**
  * Parse SVG string and extract viewBox/paths
  */
 function parseSvg(svgString: string): {
@@ -287,9 +391,37 @@ ${rasterBgElements}  <image href="${href}" width="${scaledWidth}" height="${scal
   const scale = iconSize / Math.max(vbWidth, vbHeight);
   const adjustedContent = coloredContent;
   
+  // Calculate the visual bounding box to detect off-center icon content
+  // Some icon libraries (e.g., Zendesk Garden) have icons where visual content
+  // is intentionally not centered within the viewBox for pixel-perfect rendering
+  const visualBBox = getVisualBoundingBox(content, vbWidth, vbHeight, {
+    fill: inheritedFill,
+    stroke: inheritedStroke,
+    strokeWidth: inheritedStrokeWidth,
+  });
+  
+  // Calculate centering offset based on visual content position
+  // If the visual content is off-center within the viewBox, we compensate
+  let visualCenterOffsetX = 0;
+  let visualCenterOffsetY = 0;
+  
+  if (visualBBox) {
+    // Calculate where the visual center is relative to the viewBox center
+    const vbCenterX = vbWidth / 2;
+    const vbCenterY = vbHeight / 2;
+    
+    // The offset is how much the visual center deviates from the viewBox center
+    // We apply the inverse to bring visual content to true center
+    visualCenterOffsetX = vbCenterX - visualBBox.centerX;
+    visualCenterOffsetY = vbCenterY - visualBBox.centerY;
+  }
+  
   // Center the icon - calculate position to center the scaled icon in the padded area
-  const iconX = effectivePadding + (iconSize - vbWidth * scale) / 2;
-  const iconY = effectivePadding + (iconSize - vbHeight * scale) / 2;
+  // Apply the visual center offset to correct for off-center icon designs
+  const baseIconX = effectivePadding + (iconSize - vbWidth * scale) / 2;
+  const baseIconY = effectivePadding + (iconSize - vbHeight * scale) / 2;
+  const iconX = baseIconX + visualCenterOffsetX * scale;
+  const iconY = baseIconY + visualCenterOffsetY * scale;
   const needsViewBoxOffset = vbMinX !== 0 || vbMinY !== 0;
 
   // Apply inherited attributes from root SVG element to the group
