@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Search, X, Shuffle } from "lucide-react";
+import { Search, X, Shuffle, Library, Upload, Smile, Image, Layers } from "lucide-react";
 import { IconGrid } from "@/src/components/IconGrid";
 import { useKeyboardShortcuts } from "@/src/hooks/use-keyboard-shortcuts";
 import { useIconSearch, type SortOption } from "@/src/hooks/use-icon-search";
@@ -207,12 +207,42 @@ export function IconSearchPane({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ICON_PACKS.ALL}>All</SelectItem>
-              <SelectItem value={ICON_PACKS.GARDEN}>Garden</SelectItem>
-              <SelectItem value={ICON_PACKS.FEATHER}>Feather</SelectItem>
-              <SelectItem value={ICON_PACKS.REMIXICON}>RemixIcon</SelectItem>
-              <SelectItem value={ICON_PACKS.EMOJI}>Emoji</SelectItem>
-              <SelectItem value={ICON_PACKS.CUSTOM_SVG}>Custom SVG</SelectItem>
+              <SelectItem value={ICON_PACKS.ALL}>
+                <span className="flex items-center gap-2">
+                  <Layers className="size-4" />
+                  All
+                </span>
+              </SelectItem>
+              <SelectItem value={ICON_PACKS.GARDEN}>
+                <span className="flex items-center gap-2">
+                  <Library className="size-4" />
+                  Garden
+                </span>
+              </SelectItem>
+              <SelectItem value={ICON_PACKS.FEATHER}>
+                <span className="flex items-center gap-2">
+                  <Library className="size-4" />
+                  Feather
+                </span>
+              </SelectItem>
+              <SelectItem value={ICON_PACKS.REMIXICON}>
+                <span className="flex items-center gap-2">
+                  <Library className="size-4" />
+                  RemixIcon
+                </span>
+              </SelectItem>
+              <SelectItem value={ICON_PACKS.EMOJI}>
+                <span className="flex items-center gap-2">
+                  <Smile className="size-4" />
+                  Emoji
+                </span>
+              </SelectItem>
+              <SelectItem value={ICON_PACKS.CUSTOM_SVG}>
+                <span className="flex items-center gap-2">
+                  <Upload className="size-4" />
+                  Custom SVG
+                </span>
+              </SelectItem>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -221,7 +251,10 @@ export function IconSearchPane({
                         value={ICON_PACKS.CUSTOM_IMAGE} 
                         disabled={hasSvgLocationsSelected}
                       >
-                        Custom Image
+                        <span className="flex items-center gap-2">
+                          <Image className="size-4" />
+                          Custom Image
+                        </span>
                       </SelectItem>
                     </span>
                   </TooltipTrigger>
