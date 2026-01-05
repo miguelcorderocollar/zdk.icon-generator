@@ -35,7 +35,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
-              size="icon"
+              size="icon-lg"
               className="shrink-0"
               onClick={toggleTheme}
               aria-label="Toggle theme"
@@ -50,7 +50,7 @@ export default function Home() {
             </Button>
             <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="shrink-0">
+                <Button variant="ghost" size="icon-lg" className="shrink-0">
                   <Info className="h-5 w-5" />
                   <span className="sr-only">About this app</span>
                 </Button>
@@ -142,7 +142,7 @@ export default function Home() {
       </header>
 
       {/* Main three-pane layout */}
-      <div className="flex flex-1 overflow-hidden">
+      <main className="flex flex-1 overflow-hidden">
         {/* Desktop: side-by-side, Mobile/Tablet: stacked */}
         <div className="flex h-full w-full flex-col gap-4 overflow-y-auto p-4 md:flex-row md:overflow-hidden">
           {/* Icon Search Pane */}
@@ -184,7 +184,7 @@ export default function Home() {
             />
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

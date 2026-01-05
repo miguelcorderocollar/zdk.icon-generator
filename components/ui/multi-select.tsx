@@ -109,12 +109,14 @@ export function MultiSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
-        <div className="max-h-[300px] overflow-y-auto p-2">
+        <div role="listbox" className="max-h-[300px] overflow-y-auto p-2">
           {options.map((option) => {
             const isDisabled = option.disabled ?? false;
             const optionContent = (
               <div
                 key={option.value}
+                role="option"
+                aria-selected={selected.includes(option.value)}
                 className={cn(
                   "flex items-start space-x-2 rounded-sm px-2 py-1.5",
                   isDisabled

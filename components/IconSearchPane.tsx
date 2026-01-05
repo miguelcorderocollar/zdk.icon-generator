@@ -154,8 +154,12 @@ export function IconSearchPane({
         {/* Search Input */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
+            <Label htmlFor="icon-search" className="sr-only">
+              Search icons
+            </Label>
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <Input
+              id="icon-search"
               ref={searchInputRef}
               placeholder={`Search icons... (Press ${isMac ? "⌘K" : "Ctrl+K"} to focus)`}
               className="pl-9 pr-9"
@@ -194,7 +198,7 @@ export function IconSearchPane({
                 <Button
                   type="button"
                   variant="outline"
-                  size="icon"
+                  size="icon-lg"
                   onClick={handleRandomIcon}
                   disabled={icons.length === 0 || isLoading}
                   aria-label="Random icon"
