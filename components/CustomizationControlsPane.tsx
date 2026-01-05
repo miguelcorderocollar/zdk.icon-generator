@@ -217,7 +217,7 @@ export function CustomizationControlsPane({
         {/* Color Controls */}
         <div className="space-y-4">
           <h3 className="text-sm font-medium">Colors</h3>
-          {onIconColorChange && !selectedIconId?.startsWith("emoji-") && (
+          {onIconColorChange && !selectedIconId?.startsWith("emoji-") && !isCustomImage && (
             <ColorPicker
               id="icon-color"
               label="Icon Color"
