@@ -30,6 +30,9 @@ export const metadata: Metadata = {
     "Zendesk Garden",
     "Feather icons",
     "icon export",
+    "RemixIcon",
+    "SVG icons",
+    "developer tools",
   ],
   authors: [
     {
@@ -45,6 +48,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  formatDetection: {
+    telephone: false,
+    date: false,
+    address: false,
+    email: false,
+  },
+  referrer: "origin-when-cross-origin",
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -107,6 +117,11 @@ export const metadata: Metadata = {
     },
   },
   category: "developer tools",
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
+  },
 };
 
 export const viewport: Viewport = {
@@ -124,6 +139,46 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "Zendesk App Icon Generator",
+    description:
+      "Generate compliant Zendesk app icon bundles. A local-first tool for crafting Zendesk app icons with customizable colors, effects, and one-click export.",
+    url: baseUrl,
+    applicationCategory: "DeveloperApplication",
+    operatingSystem: "Web Browser",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    author: {
+      "@type": "Person",
+      name: "Miguel Cordero Collar",
+      url: "https://github.com/miguelcorderocollar",
+    },
+    publisher: {
+      "@type": "Person",
+      name: "Miguel Cordero Collar",
+    },
+    inLanguage: "en-US",
+    browserRequirements: "Requires JavaScript. Modern web browser required.",
+    featureList: [
+      "Zendesk app icon generation",
+      "Multiple icon packs (Garden, Feather, RemixIcon, Emoji)",
+      "Custom SVG and image upload",
+      "Color customization with gradients",
+      "One-click ZIP export",
+      "Local-first, privacy-focused",
+    ],
+    screenshot: `${baseUrl}/logo.png`,
+    image: `${baseUrl}/logo.png`,
+  };
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -142,6 +197,10 @@ export default function RootLayout({
               })();
             `,
           }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <ThemeProvider>{children}</ThemeProvider>
         <Analytics />
