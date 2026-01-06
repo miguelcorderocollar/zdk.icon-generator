@@ -17,11 +17,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Info, Github, Globe, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/src/components/ThemeProvider";
+import { WelcomeModal } from "@/src/components/WelcomeModal";
+import { hasSeenWelcome } from "@/src/utils/local-storage";
 
 export default function Home() {
   const { state, actions } = useIconGenerator();
   const [isInfoOpen, setIsInfoOpen] = React.useState(false);
+  const [isWelcomeOpen, setIsWelcomeOpen] = React.useState(false);
   const { theme, mounted, toggleTheme } = useTheme();
+
+  // Show welcome modal on first visit
+  React.useEffect(() => {
+    if (!hasSeenWelcome()) {
+      setIsWelcomeOpen(true);
+    }
+  }, []);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -110,6 +120,20 @@ export default function Home() {
                       </Button>
                     </div>
                   </div>
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold">Need Help?</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsInfoOpen(false);
+                        setIsWelcomeOpen(true);
+                      }}
+                      className="w-full"
+                    >
+                      Show Welcome Guide
+                    </Button>
+                  </div>
                   <div className="border-t pt-4">
                     <p className="text-sm text-muted-foreground">
                       Made by{" "}
@@ -137,6 +161,10 @@ export default function Home() {
                 </div>
               </DialogContent>
             </Dialog>
+            <WelcomeModal
+              open={isWelcomeOpen}
+              onOpenChange={setIsWelcomeOpen}
+            />
           </div>
         </div>
       </header>

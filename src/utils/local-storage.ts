@@ -212,3 +212,54 @@ export function clearGeneratorState(): void {
     console.error("Error clearing generator state from localStorage:", error);
   }
 }
+
+/**
+ * Welcome modal persistence
+ */
+const WELCOME_SEEN_KEY = `${STORAGE_PREFIX}:welcome-seen`;
+
+/**
+ * Check if user has seen the welcome modal
+ */
+export function hasSeenWelcome(): boolean {
+  if (typeof window === "undefined") {
+    return true; // Default to true on server to avoid showing modal during SSR
+  }
+
+  try {
+    return localStorage.getItem(WELCOME_SEEN_KEY) === "true";
+  } catch (error) {
+    console.error("Error reading welcome state from localStorage:", error);
+    return false;
+  }
+}
+
+/**
+ * Mark welcome modal as seen
+ */
+export function markWelcomeSeen(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    localStorage.setItem(WELCOME_SEEN_KEY, "true");
+  } catch (error) {
+    console.error("Error marking welcome as seen:", error);
+  }
+}
+
+/**
+ * Reset welcome modal (for testing/debugging)
+ */
+export function resetWelcome(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    localStorage.removeItem(WELCOME_SEEN_KEY);
+  } catch (error) {
+    console.error("Error resetting welcome state:", error);
+  }
+}
