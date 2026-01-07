@@ -83,7 +83,7 @@ export function WelcomeModal({ open, onOpenChange }: WelcomeModalProps) {
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto min-h-[350px] sm:min-h-[400px] -mx-6 px-6">
+        <div className="overflow-y-auto h-[420px] sm:h-[460px] -mx-6 px-6">
           <WelcomeStep stepIndex={currentStep - 1} />
         </div>
 

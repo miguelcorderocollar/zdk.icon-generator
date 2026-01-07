@@ -4,15 +4,39 @@ import {
   Palette,
   Settings,
   Download,
+  Zap,
+  Lock,
+  Clock,
+  CheckCircle,
+  Package,
+  Feather,
+  Grid3x3,
+  Smile,
+  Upload,
+  MapPin,
+  Layers,
+  Pipette,
+  Maximize,
+  Eye,
+  FileImage,
+  FileType,
+  FolderArchive,
+  ShieldCheck,
+  FolderCheck,
   type LucideIcon,
 } from "lucide-react";
 import { KALE_COLORS } from "@/src/utils/gradients";
+
+interface Feature {
+  text: string;
+  icon: LucideIcon;
+}
 
 interface StepContentProps {
   icon: LucideIcon;
   title: string;
   description: string;
-  features: string[];
+  features: Feature[];
 }
 
 function StepContent({
@@ -22,32 +46,38 @@ function StepContent({
   features,
 }: StepContentProps) {
   return (
-    <div className="flex flex-col items-center space-y-6 py-4 text-center">
+    <div className="flex flex-col items-center space-y-6 py-4 text-center animate-in fade-in duration-300">
       <div
-        className="rounded-full p-5 shadow-lg"
+        className="rounded-full p-5 shadow-xl ring-1 ring-white/10 transition-transform hover:scale-105"
         style={{ backgroundColor: KALE_COLORS["900"] }}
       >
         <Icon className="h-14 w-14 text-white" strokeWidth={1.5} />
       </div>
       <div className="space-y-2 px-4">
-        <h2 className="text-xl font-semibold">{title}</h2>
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <h2 className="text-2xl font-bold">{title}</h2>
+        <p className="text-base text-muted-foreground">{description}</p>
       </div>
-      <ul className="w-full space-y-2.5 text-left px-4 sm:px-6">
-        {features.map((feature, index) => (
-          <li
-            key={index}
-            className="flex items-start gap-2.5 text-sm text-muted-foreground"
-          >
-            <span
-              className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-              style={{ backgroundColor: KALE_COLORS["700"] }}
+      <ul className="w-full max-w-xl space-y-3 text-left px-4 sm:px-6">
+        {features.map((feature, index) => {
+          const FeatureIcon = feature.icon;
+          return (
+            <li
+              key={index}
+              className="flex items-start gap-3 text-sm text-foreground/90 group"
             >
-              •
-            </span>
-            <span className="flex-1">{feature}</span>
-          </li>
-        ))}
+              <span
+                className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md shadow-sm ring-1 ring-white/10 transition-all group-hover:scale-110 group-hover:shadow-md"
+                style={{ backgroundColor: KALE_COLORS["700"] }}
+              >
+                <FeatureIcon
+                  className="h-3.5 w-3.5 text-white"
+                  strokeWidth={2}
+                />
+              </span>
+              <span className="flex-1 leading-relaxed">{feature.text}</span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
@@ -60,10 +90,19 @@ export const WELCOME_STEPS = [
     description:
       "Generate compliant Zendesk app icon bundles quickly and easily, all in your browser.",
     features: [
-      "Create compliant icon sets for Zendesk apps in minutes",
-      "All processing happens locally - no account or upload needed",
-      "Save time with automated sizing and naming",
-      "Ensure compliance with Zendesk's icon requirements",
+      {
+        text: "Create compliant icon sets for Zendesk apps in minutes",
+        icon: Zap,
+      },
+      {
+        text: "All processing happens locally - no account or upload needed",
+        icon: Lock,
+      },
+      { text: "Save time with automated sizing and naming", icon: Clock },
+      {
+        text: "Ensure compliance with Zendesk's icon requirements",
+        icon: CheckCircle,
+      },
     ],
   },
   {
@@ -72,11 +111,20 @@ export const WELCOME_STEPS = [
     description:
       "Access a curated collection of icon packs, all with permissive licenses.",
     features: [
-      "Zendesk Garden - Official Zendesk design system icons",
-      "Feather Icons - Minimal, clean, and consistent icon set",
-      "RemixIcon - Modern, comprehensive icon library",
-      "Emoji - Quick and expressive emoji icons",
-      "Custom SVG/Image - Upload and use your own designs",
+      {
+        text: "Zendesk Garden - Official Zendesk design system icons",
+        icon: Package,
+      },
+      {
+        text: "Feather Icons - Minimal, clean, and consistent icon set",
+        icon: Feather,
+      },
+      { text: "RemixIcon - Modern, comprehensive icon library", icon: Grid3x3 },
+      { text: "Emoji - Quick and expressive emoji icons", icon: Smile },
+      {
+        text: "Custom SVG/Image - Upload and use your own designs",
+        icon: Upload,
+      },
     ],
   },
   {
@@ -85,11 +133,23 @@ export const WELCOME_STEPS = [
     description:
       "Fine-tune your icons with real-time previews and flexible options.",
     features: [
-      "Select app locations: Support, Chat, Talk, Nav Bar, Top Bar, Ticket Editor",
-      "Choose background styles: Solid colors, linear gradients, radial gradients",
-      "Adjust icon colors with full color picker and history",
-      "Control icon sizing for both PNG and SVG exports",
-      "Preview all variants in real-time before exporting",
+      {
+        text: "Select app locations: Support, Chat, Talk, Nav Bar, Top Bar, Ticket Editor",
+        icon: MapPin,
+      },
+      {
+        text: "Choose background styles: Solid colors, linear gradients, radial gradients",
+        icon: Layers,
+      },
+      {
+        text: "Adjust icon colors with full color picker and history",
+        icon: Pipette,
+      },
+      {
+        text: "Control icon sizing for both PNG and SVG exports",
+        icon: Maximize,
+      },
+      { text: "Preview all variants in real-time before exporting", icon: Eye },
     ],
   },
   {
@@ -98,11 +158,26 @@ export const WELCOME_STEPS = [
     description:
       "Download a ZIP file with all required assets, properly sized and named.",
     features: [
-      "PNG assets: logo.png (320×320) and logo-small.png (128×128)",
-      "SVG assets: Location-specific icons with transparent backgrounds",
-      "One-click ZIP download with correct file structure",
-      "Built-in validation for colors, locations, and compliance",
-      "Ready to add directly to your Zendesk app project",
+      {
+        text: "PNG assets: logo.png (320×320) and logo-small.png (128×128)",
+        icon: FileImage,
+      },
+      {
+        text: "SVG assets: Location-specific icons with transparent backgrounds",
+        icon: FileType,
+      },
+      {
+        text: "One-click ZIP download with correct file structure",
+        icon: FolderArchive,
+      },
+      {
+        text: "Built-in validation for colors, locations, and compliance",
+        icon: ShieldCheck,
+      },
+      {
+        text: "Ready to add directly to your Zendesk app project",
+        icon: FolderCheck,
+      },
     ],
   },
 ];
