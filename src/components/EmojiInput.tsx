@@ -10,19 +10,19 @@ import { addEmoji } from "../utils/emoji-catalog";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Theme is used in JSX below
+
 export interface EmojiInputProps {
   onEmojiAdded?: (emojiId: string) => void;
   className?: string;
 }
 
 export function EmojiInput({ onEmojiAdded, className }: EmojiInputProps) {
-  const [isProcessing, setIsProcessing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState(false);
 
   const handleEmojiClick = async (emojiData: EmojiClickData) => {
     const emoji = emojiData.emoji;
-    setIsProcessing(true);
     setError(null);
     setSuccess(false);
 
@@ -39,19 +39,7 @@ export function EmojiInput({ onEmojiAdded, className }: EmojiInputProps) {
       setTimeout(() => setSuccess(false), 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add emoji");
-    } finally {
-      setIsProcessing(false);
     }
-  };
-
-  // Detect system theme for emoji picker
-  const getTheme = (): Theme => {
-    if (typeof window !== "undefined") {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? Theme.DARK
-        : Theme.LIGHT;
-    }
-    return Theme.LIGHT;
   };
 
   return (
