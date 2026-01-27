@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
   ),
   alternates: {
-    canonical: "/",
+    canonical: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
   },
   formatDetection: {
     telephone: false,
@@ -58,26 +58,17 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "/",
+    url: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
     title: "Zendesk App Icon Generator",
     description:
       "Generate compliant Zendesk app icon bundles. A local-first tool for crafting Zendesk app icons with customizable colors, effects, and one-click export.",
     siteName: "Zendesk App Icon Generator",
-    images: [
-      {
-        url: "/logo.png",
-        width: 320,
-        height: 320,
-        alt: "Zendesk App Icon Generator Logo",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Zendesk App Icon Generator",
     description:
       "Generate compliant Zendesk app icon bundles. A local-first tool for crafting Zendesk app icons.",
-    images: ["/logo.png"],
     creator: "@miguelcorderocollar",
   },
   icons: {
