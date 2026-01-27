@@ -2,6 +2,10 @@ import { test, expect } from "@playwright/test";
 
 test.describe("localStorage Persistence", () => {
   test("persists icon color across page reload", async ({ page }) => {
+    // Set localStorage to skip welcome modal before navigating
+    await page.addInitScript(() => {
+      localStorage.setItem('zdk-icon-generator:welcome-seen', 'true');
+    });
     await page.goto("/");
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
@@ -30,6 +34,10 @@ test.describe("localStorage Persistence", () => {
   });
 
   test("persists background color across page reload", async ({ page }) => {
+    // Set localStorage to skip welcome modal before navigating
+    await page.addInitScript(() => {
+      localStorage.setItem('zdk-icon-generator:welcome-seen', 'true');
+    });
     await page.goto("/");
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
@@ -57,6 +65,10 @@ test.describe("localStorage Persistence", () => {
   });
 
   test("persists selected icon pack across page reload", async ({ page }) => {
+    // Set localStorage to skip welcome modal before navigating
+    await page.addInitScript(() => {
+      localStorage.setItem('zdk-icon-generator:welcome-seen', 'true');
+    });
     await page.goto("/");
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
@@ -93,6 +105,10 @@ test.describe("localStorage Persistence", () => {
   });
 
   test("persists selected locations across page reload", async ({ page }) => {
+    // Set localStorage to skip welcome modal before navigating
+    await page.addInitScript(() => {
+      localStorage.setItem('zdk-icon-generator:welcome-seen', 'true');
+    });
     await page.goto("/");
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
@@ -131,6 +147,10 @@ test.describe("localStorage Persistence", () => {
   });
 
   test("does not persist search query across reload", async ({ page }) => {
+    // Set localStorage to skip welcome modal before navigating
+    await page.addInitScript(() => {
+      localStorage.setItem('zdk-icon-generator:welcome-seen', 'true');
+    });
     await page.goto("/");
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
@@ -153,6 +173,10 @@ test.describe("localStorage Persistence", () => {
   });
 
   test("clears localStorage and resets to defaults", async ({ page }) => {
+    // Set localStorage to skip welcome modal before navigating
+    await page.addInitScript(() => {
+      localStorage.setItem('zdk-icon-generator:welcome-seen', 'true');
+    });
     // First, set some values
     await page.goto("/");
     await page.waitForLoadState("networkidle");

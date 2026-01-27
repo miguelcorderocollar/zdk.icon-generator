@@ -2,6 +2,10 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Custom Image Upload", () => {
   test.beforeEach(async ({ page }) => {
+    // Set localStorage to skip welcome modal before navigating
+    await page.addInitScript(() => {
+      localStorage.setItem('zdk-icon-generator:welcome-seen', 'true');
+    });
     await page.goto("/");
     // Wait for the page to fully load
     await expect(page.locator("text=Icon Search")).toBeVisible();

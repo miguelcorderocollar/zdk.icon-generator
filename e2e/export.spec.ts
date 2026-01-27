@@ -2,6 +2,10 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Export Flow", () => {
   test.beforeEach(async ({ page }) => {
+    // Set localStorage to skip welcome modal before navigating
+    await page.addInitScript(() => {
+      localStorage.setItem('zdk-icon-generator:welcome-seen', 'true');
+    });
     await page.goto("/");
     await page.waitForLoadState("networkidle");
     // Wait for random icon selection
