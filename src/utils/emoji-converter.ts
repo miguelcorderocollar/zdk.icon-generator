@@ -9,47 +9,6 @@ import type { IconMetadata } from "../types/icon";
 const emojiDataUrlCache = new Map<string, string>();
 
 /**
- * Check if a string contains valid emoji characters
- */
-export function isValidEmoji(text: string): boolean {
-  // Remove whitespace and check if remaining is emoji
-  const trimmed = text.trim();
-  if (!trimmed) return false;
-
-  // Unicode emoji regex pattern (covers most emoji ranges)
-  const emojiRegex =
-    /^[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{2190}-\u{21FF}]|[\u{2300}-\u{23FF}]|[\u{2B50}-\u{2B55}]|[\u{3030}-\u{303F}]|[\u{3297}-\u{3299}]/u;
-
-  // Check if the trimmed string matches emoji pattern
-  // Also handle multi-codepoint emojis (like flags, skin tones, etc.)
-  return emojiRegex.test(trimmed) || /[\u{1F300}-\u{1FAFF}]/u.test(trimmed);
-}
-
-/**
- * Extract emoji from text (get first emoji found)
- */
-export function extractEmoji(text: string): string | null {
-  const trimmed = text.trim();
-  if (!trimmed) return null;
-
-  // Try to match emoji pattern
-  const emojiMatch = trimmed.match(
-    /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{2190}-\u{21FF}]|[\u{2300}-\u{23FF}]|[\u{2B50}-\u{2B55}]|[\u{3030}-\u{303F}]|[\u{3297}-\u{3299}]/u
-  );
-
-  if (emojiMatch) {
-    return emojiMatch[0];
-  }
-
-  // Fallback: check if entire string is emoji
-  if (isValidEmoji(trimmed)) {
-    return trimmed;
-  }
-
-  return null;
-}
-
-/**
  * Generate a unique ID for an emoji based on its unicode codepoints
  */
 function generateEmojiId(emoji: string): string {

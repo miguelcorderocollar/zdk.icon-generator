@@ -161,3 +161,99 @@
     }
   }
 }
+
+/* Emoji Picker Wrapper - Light Mode */
+.emoji-picker-wrapper {
+  background-color: hsl(var(--card));
+  border: none !important;
+}
+
+/* Emoji Picker - Light Theme Overrides */
+.emoji-picker-wrapper .EmojiPickerReact,
+.emoji-picker-wrapper aside.EmojiPickerReact {
+  background-color: hsl(var(--card)) !important;
+  color: hsl(var(--card-foreground)) !important;
+  border: none !important;
+}
+
+.emoji-picker-wrapper [class*="body"],
+.emoji-picker-wrapper [class*="PickerBody"] {
+  background-color: hsl(var(--card)) !important;
+}
+
+/* Search box styling */
+.emoji-picker-wrapper [class*="search"],
+.emoji-picker-wrapper [class*="Search"] {
+  background-color: hsl(var(--card)) !important;
+  border: none !important;
+}
+
+.emoji-picker-wrapper input {
+  background-color: hsl(var(--background)) !important;
+  border: none !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.emoji-picker-wrapper input::placeholder {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.emoji-picker-wrapper input:focus {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Category buttons and navigation */
+.emoji-picker-wrapper [class*="category"],
+.emoji-picker-wrapper [class*="Category"] {
+  background-color: hsl(var(--card)) !important;
+  color: hsl(var(--card-foreground)) !important;
+  border: none !important;
+}
+
+.emoji-picker-wrapper button {
+  color: hsl(var(--card-foreground)) !important;
+}
+
+.emoji-picker-wrapper button:hover,
+.emoji-picker-wrapper button:focus {
+  background-color: hsl(var(--accent)) !important;
+}
+
+/* Category labels */
+.emoji-picker-wrapper [class*="label"] {
+  background-color: hsl(var(--card)) !important;
+  color: hsl(var(--card-foreground)) !important;
+}
+
+/* Preview area */
+.emoji-picker-wrapper [class*="preview"] {
+  background-color: hsl(var(--card)) !important;
+  border: none !important;
+}
+
+/* Skin tone picker and footer */
+.emoji-picker-wrapper [class*="skin"],
+.emoji-picker-wrapper footer,
+.emoji-picker-wrapper [class*="footer"] {
+  background-color: hsl(var(--card)) !important;
+  border: none !important;
+}
+
+/* Scrollbar in emoji picker */
+.emoji-picker-wrapper ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.emoji-picker-wrapper ::-webkit-scrollbar-track {
+  background-color: hsl(var(--card));
+}
+
+.emoji-picker-wrapper ::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+.emoji-picker-wrapper ::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground));
+}
