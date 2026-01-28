@@ -63,6 +63,15 @@ export const metadata: Metadata = {
     description:
       "Generate compliant Zendesk app icon bundles. A local-first tool for crafting Zendesk app icons with customizable colors, effects, and one-click export.",
     siteName: "Zendesk App Icon Generator",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Zendesk App Icon Generator",
+        type: "image/png",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -70,6 +79,7 @@ export const metadata: Metadata = {
     description:
       "Generate compliant Zendesk app icon bundles. A local-first tool for crafting Zendesk app icons.",
     creator: "@miguelcorderocollar",
+    images: ["/opengraph-image"],
   },
   icons: {
     icon: [
