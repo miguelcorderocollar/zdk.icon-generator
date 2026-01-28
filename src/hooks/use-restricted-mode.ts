@@ -9,7 +9,13 @@
  */
 
 import * as React from "react";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
 import type {
   RestrictionConfig,
   RestrictedStyle,
@@ -127,20 +133,28 @@ function getInitialConfig(): RestrictionConfig | null {
 }
 
 /**
+ * Subscribe function for useSyncExternalStore (no-op since mounted state never changes after initial)
+ */
+function subscribeMounted(_callback: () => void): () => void {
+  // No subscription needed - mounted state is determined once
+  return () => {};
+}
+
+/**
  * Hook for managing restricted mode
  */
 export function useRestrictedMode(): UseRestrictedModeReturn {
   // Use lazy initialization to avoid effect-based setState
   const [config] = useState<RestrictionConfig | null>(getInitialConfig);
   // Track if component has mounted on client (to prevent hydration mismatches)
-  const [mounted, setMounted] = useState(false);
+  // Using useSyncExternalStore to avoid the setState-in-effect pattern
+  const mounted = useSyncExternalStore(
+    subscribeMounted,
+    () => true, // Client: always mounted
+    () => false // Server: never mounted
+  );
   // Track if we've synced the URL (to avoid running effect multiple times)
   const urlSyncedRef = React.useRef(false);
-
-  // Mark as mounted after client-side hydration
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Handle URL synchronization after mount (only external system update)
   useEffect(() => {
