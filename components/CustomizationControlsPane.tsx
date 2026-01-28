@@ -2,36 +2,26 @@
 
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { MultiSelect } from "@/components/ui/multi-select";
 import { Separator } from "@/components/ui/separator";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { Settings, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ColorPicker } from "@/src/components/ColorPicker";
 import { EffectSlider } from "@/src/components/EffectSlider";
 import { BackgroundControls } from "@/src/components/BackgroundControls";
-import { APP_LOCATION_OPTIONS } from "@/src/utils/app-location-options";
-import {
-  getLocationCountText,
-  getSvgRequiringLocations,
-  isCustomImageIcon,
-} from "@/src/utils/locations";
+import { ExportPresetSelector } from "@/src/components/ExportPresetSelector";
+import { ExportPresetEditor } from "@/src/components/ExportPresetEditor";
+import { StylePresetSelector } from "@/src/components/StylePresetSelector";
+import { StylePresetEditor } from "@/src/components/StylePresetEditor";
+import { PresetSettingsModal } from "@/src/components/PresetSettingsModal";
 import { DEFAULT_COLORS, ICON_GRID } from "@/src/constants/app";
 import { useDebouncedValue } from "@/src/hooks/use-debounced-value";
-import type { AppLocation } from "@/src/types/app-location";
+import { usePresets } from "@/src/hooks/use-presets";
 import type { BackgroundValue } from "@/src/utils/gradients";
-import { hasSvgRequirements } from "@/src/utils/locations";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ImageIcon } from "lucide-react";
+import type { ExportPreset, StylePreset } from "@/src/types/preset";
+import { isCustomImageIcon } from "@/src/utils/locations";
 
 export interface CustomizationControlsPaneProps {
-  selectedLocations: AppLocation[];
-  onLocationsChange: (locations: AppLocation[]) => void;
   backgroundColor?: BackgroundValue;
   onBackgroundColorChange?: (color: BackgroundValue) => void;
   iconColor?: string;
@@ -44,8 +34,6 @@ export interface CustomizationControlsPaneProps {
 }
 
 export function CustomizationControlsPane({
-  selectedLocations,
-  onLocationsChange,
   backgroundColor = DEFAULT_COLORS.BACKGROUND,
   onBackgroundColorChange,
   iconColor = DEFAULT_COLORS.ICON,
@@ -56,35 +44,106 @@ export function CustomizationControlsPane({
   onSvgIconSizeChange,
   selectedIconId,
 }: CustomizationControlsPaneProps) {
-  // Check if SVG files are required for selected locations
-  const hasSvgFiles = hasSvgRequirements(selectedLocations);
+  // Presets hook
+  const {
+    exportPresets,
+    selectedExportPresetId,
+    selectedExportPreset,
+    selectExportPreset,
+    createExportPreset,
+    updateExportPreset,
+    deleteExportPreset,
+    stylePresets,
+    selectedStylePresetId,
+    selectStylePreset,
+    createStylePreset,
+    updateStylePreset,
+    deleteStylePreset,
+    exportAllPresets,
+    importPresets,
+    clearCustomPresets,
+    hasCustomExportPresets,
+    hasCustomStylePresets,
+  } = usePresets();
 
-  // Check if current icon is a custom image (disables SVG locations)
+  // Export preset editor state
+  const [showExportEditor, setShowExportEditor] = React.useState(false);
+  const [editingExportPreset, setEditingExportPreset] = React.useState<
+    ExportPreset | undefined
+  >();
+
+  // Style preset editor state
+  const [showStyleEditor, setShowStyleEditor] = React.useState(false);
+  const [editingStylePreset, setEditingStylePreset] = React.useState<
+    StylePreset | undefined
+  >();
+
+  // Check if current icon is a custom image
   const isCustomImage = isCustomImageIcon(selectedIconId);
 
-  // Get SVG-requiring locations to disable them when custom image is selected
-  const svgRequiringLocations = getSvgRequiringLocations();
+  // Check if selected export preset has SVG variants
+  const hasSvgVariants = React.useMemo(() => {
+    if (!selectedExportPreset) return false;
+    return selectedExportPreset.variants.some((v) => v.format === "svg");
+  }, [selectedExportPreset]);
 
-  // Build location options with disabled state for custom images
-  const locationOptions = React.useMemo(() => {
-    if (!isCustomImage) {
-      return APP_LOCATION_OPTIONS;
+  // Handle applying a style preset
+  const handleApplyStylePreset = React.useCallback(
+    (preset: StylePreset) => {
+      if (onBackgroundColorChange) {
+        onBackgroundColorChange(preset.backgroundColor);
+      }
+      if (onIconColorChange) {
+        onIconColorChange(preset.iconColor);
+      }
+    },
+    [onBackgroundColorChange, onIconColorChange]
+  );
+
+  // Export preset handlers
+  const handleCreateExportPreset = () => {
+    setEditingExportPreset(undefined);
+    setShowExportEditor(true);
+  };
+
+  const handleEditExportPreset = (preset: ExportPreset) => {
+    setEditingExportPreset(preset);
+    setShowExportEditor(true);
+  };
+
+  const handleSaveExportPreset = (
+    preset: Omit<ExportPreset, "id" | "isBuiltIn" | "createdAt">
+  ) => {
+    if (editingExportPreset) {
+      updateExportPreset(editingExportPreset.id, preset);
+    } else {
+      const newPreset = createExportPreset(preset);
+      selectExportPreset(newPreset.id);
     }
+  };
 
-    return APP_LOCATION_OPTIONS.map((option) => {
-      // Disable SVG-requiring locations and "all_locations" when custom image is selected
-      const isSvgLocation =
-        svgRequiringLocations.includes(option.value as AppLocation) ||
-        option.value === "all_locations";
-      return {
-        ...option,
-        disabled: isSvgLocation,
-        disabledReason: isSvgLocation
-          ? "Requires SVG (not available for custom images)"
-          : undefined,
-      };
-    });
-  }, [isCustomImage, svgRequiringLocations]);
+  // Style preset handlers
+  const handleCreateStylePreset = () => {
+    setEditingStylePreset(undefined);
+    setShowStyleEditor(true);
+  };
+
+  const handleEditStylePreset = (preset: StylePreset) => {
+    setEditingStylePreset(preset);
+    setShowStyleEditor(true);
+  };
+
+  const handleSaveStylePreset = (
+    preset: Omit<StylePreset, "id" | "isBuiltIn" | "createdAt">
+  ) => {
+    if (editingStylePreset) {
+      updateStylePreset(editingStylePreset.id, preset);
+    } else {
+      const newPreset = createStylePreset(preset);
+      selectStylePreset(newPreset.id);
+      handleApplyStylePreset(newPreset as StylePreset);
+    }
+  };
 
   // Debounce icon size changes to prevent lag while dragging slider
   const [localIconSize, setLocalIconSize] = React.useState(iconSize);
@@ -96,7 +155,7 @@ export function CustomizationControlsPane({
   const debouncedSvgIconSize = useDebouncedValue(localSvgIconSize, 300);
   const lastPropSvgSizeRef = React.useRef(svgIconSize);
 
-  // Update parent when debounced value changes (but only if it's different from prop)
+  // Update parent when debounced value changes
   React.useEffect(() => {
     if (onIconSizeChange && debouncedIconSize !== lastPropSizeRef.current) {
       lastPropSizeRef.current = debouncedIconSize;
@@ -104,7 +163,6 @@ export function CustomizationControlsPane({
     }
   }, [debouncedIconSize, onIconSizeChange]);
 
-  // Update parent when debounced SVG size changes
   React.useEffect(() => {
     if (
       onSvgIconSizeChange &&
@@ -115,7 +173,7 @@ export function CustomizationControlsPane({
     }
   }, [debouncedSvgIconSize, onSvgIconSizeChange]);
 
-  // Sync local state when prop changes externally (but only if it's actually different)
+  // Sync local state when prop changes externally
   React.useEffect(() => {
     if (iconSize !== lastPropSizeRef.current) {
       lastPropSizeRef.current = iconSize;
@@ -123,17 +181,12 @@ export function CustomizationControlsPane({
     }
   }, [iconSize]);
 
-  // Sync local SVG size state when prop changes externally
   React.useEffect(() => {
     if (svgIconSize !== lastPropSvgSizeRef.current) {
       lastPropSvgSizeRef.current = svgIconSize;
       setLocalSvgIconSize(svgIconSize);
     }
   }, [svgIconSize]);
-
-  const handleLocationsChange = (values: string[]) => {
-    onLocationsChange(values as AppLocation[]);
-  };
 
   const handleIconSizeChange = (value: number) => {
     setLocalIconSize(value);
@@ -145,51 +198,71 @@ export function CustomizationControlsPane({
 
   return (
     <Card className="flex h-full flex-col">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle>Customization</CardTitle>
+        <PresetSettingsModal
+          exportPresets={exportPresets}
+          stylePresets={stylePresets}
+          onCreateExportPreset={createExportPreset}
+          onUpdateExportPreset={updateExportPreset}
+          onDeleteExportPreset={deleteExportPreset}
+          onCreateStylePreset={createStylePreset}
+          onUpdateStylePreset={updateStylePreset}
+          onDeleteStylePreset={deleteStylePreset}
+          onExportPresets={exportAllPresets}
+          onImportPresets={importPresets}
+          onClearPresets={clearCustomPresets}
+          hasCustomPresets={hasCustomExportPresets || hasCustomStylePresets}
+          trigger={
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Settings className="h-4 w-4" />
+            </Button>
+          }
+        />
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-6 overflow-y-auto">
-        {/* App Location Selection */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="app-locations">App Locations</Label>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="size-3.5 text-muted-foreground" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">
-                    Select where your app will appear in Zendesk. Some locations
-                    require SVG icons.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <MultiSelect
-            options={locationOptions}
-            selected={selectedLocations}
-            onChange={handleLocationsChange}
-            placeholder="Select app locations..."
-          />
-          {isCustomImage && (
-            <Alert className="mt-2">
-              <ImageIcon className="size-4" />
-              <AlertDescription className="text-xs">
-                Custom images can only be exported as PNG. Locations requiring
-                SVG icons are disabled.
-              </AlertDescription>
-            </Alert>
-          )}
-          {selectedLocations.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              {getLocationCountText(selectedLocations.length)}
-            </p>
-          )}
-        </div>
+        {/* Export Preset Selection */}
+        <ExportPresetSelector
+          presets={exportPresets}
+          selectedPresetId={selectedExportPresetId}
+          onSelectPreset={selectExportPreset}
+          onCreatePreset={handleCreateExportPreset}
+          onEditPreset={handleEditExportPreset}
+          onDeletePreset={deleteExportPreset}
+        />
+
+        {/* SVG Warning for Custom Images */}
+        {isCustomImage && hasSvgVariants && (
+          <Alert
+            variant="default"
+            className="border-amber-500/50 bg-amber-500/10"
+          >
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <AlertDescription className="text-xs">
+              Custom images cannot be exported as SVG. SVG files in this preset
+              will be skipped during export.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Separator />
+
+        {/* Style Preset Selection */}
+        {(onBackgroundColorChange || onIconColorChange) && (
+          <>
+            <StylePresetSelector
+              presets={stylePresets}
+              selectedPresetId={selectedStylePresetId}
+              onSelectPreset={selectStylePreset}
+              onApplyPreset={handleApplyStylePreset}
+              onCreatePreset={handleCreateStylePreset}
+              onEditPreset={handleEditStylePreset}
+              onDeletePreset={deleteStylePreset}
+            />
+
+            <Separator />
+          </>
+        )}
 
         {/* Icon Size */}
         {onIconSizeChange && (
@@ -197,7 +270,7 @@ export function CustomizationControlsPane({
             <h3 className="text-sm font-medium">Icon Size</h3>
             <EffectSlider
               id="icon-size"
-              label={hasSvgFiles ? "PNG Size" : "Size"}
+              label={hasSvgVariants && !isCustomImage ? "PNG Size" : "Size"}
               value={localIconSize}
               onChange={handleIconSizeChange}
               min={ICON_GRID.MIN_ICON_SIZE}
@@ -206,12 +279,11 @@ export function CustomizationControlsPane({
               unit="px"
             />
             <p className="text-xs text-muted-foreground">
-              Controls the size of the icon within the PNG canvas. Exported
-              files are 320×320 and 128×128.
+              Controls the size of the icon within the export canvas.
             </p>
 
-            {/* SVG Icon Size - only shown when SVG locations are selected */}
-            {hasSvgFiles && onSvgIconSizeChange && (
+            {/* SVG Icon Size - only shown when preset has SVG variants and not custom image */}
+            {hasSvgVariants && !isCustomImage && onSvgIconSizeChange && (
               <>
                 <EffectSlider
                   id="svg-icon-size"
@@ -224,8 +296,7 @@ export function CustomizationControlsPane({
                   unit="px"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Controls the size of the icon within SVG files (top bar,
-                  ticket editor, nav bar).
+                  Controls the size of the icon within SVG files.
                 </p>
               </>
             )}
@@ -257,6 +328,24 @@ export function CustomizationControlsPane({
           )}
         </div>
       </CardContent>
+
+      {/* Export Preset Editor Modal */}
+      <ExportPresetEditor
+        open={showExportEditor}
+        onOpenChange={setShowExportEditor}
+        preset={editingExportPreset}
+        onSave={handleSaveExportPreset}
+        mode={editingExportPreset ? "edit" : "create"}
+      />
+
+      {/* Style Preset Editor Modal */}
+      <StylePresetEditor
+        open={showStyleEditor}
+        onOpenChange={setShowStyleEditor}
+        preset={editingStylePreset}
+        onSave={handleSaveStylePreset}
+        mode={editingStylePreset ? "edit" : "create"}
+      />
     </Card>
   );
 }

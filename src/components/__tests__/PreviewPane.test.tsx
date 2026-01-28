@@ -4,15 +4,9 @@ import { PreviewPane } from "../../../components/PreviewPane";
 import type { IconGeneratorState } from "../../hooks/use-icon-generator";
 
 // Mock the child components
-vi.mock("../PngPreview", () => ({
-  PngPreview: ({ iconId }: { iconId?: string }) => (
-    <div data-testid="png-preview">PNG Preview: {iconId}</div>
-  ),
-}));
-
-vi.mock("../SvgPreview", () => ({
-  SvgPreview: ({ svgFiles }: { svgFiles: string[] }) => (
-    <div data-testid="svg-preview">SVG Preview: {svgFiles.join(", ")}</div>
+vi.mock("../PresetPreview", () => ({
+  PresetPreview: ({ preset }: { preset: { name: string } }) => (
+    <div data-testid="preset-preview">Preset Preview: {preset?.name}</div>
   ),
 }));
 
@@ -23,6 +17,26 @@ vi.mock("../ExportModal", () => ({
 
 vi.mock("../../hooks/use-icon-metadata", () => ({
   useIconMetadata: vi.fn().mockReturnValue(null),
+}));
+
+// Mock the usePresets hook
+vi.mock("../../hooks/use-presets", () => ({
+  usePresets: vi.fn().mockReturnValue({
+    selectedExportPreset: {
+      id: "zendesk-png",
+      name: "Zendesk PNG",
+      description: "PNG files for Zendesk apps",
+      variants: [
+        { filename: "logo.png", width: 320, height: 320, format: "png" },
+        { filename: "logo-small.png", width: 128, height: 128, format: "png" },
+      ],
+      isBuiltIn: true,
+    },
+    exportPresets: [],
+    stylePresets: [],
+    selectExportPreset: vi.fn(),
+    selectStylePreset: vi.fn(),
+  }),
 }));
 
 describe("PreviewPane", () => {
@@ -68,7 +82,7 @@ describe("PreviewPane", () => {
     expect(screen.getByRole("button", { name: /export zip/i })).toBeEnabled();
   });
 
-  it("shows PNG preview when icon is selected", () => {
+  it("shows preset preview when icon is selected", () => {
     const state = createMockState({ selectedIconId: "test-icon" });
     render(
       <PreviewPane
@@ -77,21 +91,7 @@ describe("PreviewPane", () => {
         state={state}
       />
     );
-    expect(screen.getByTestId("png-preview")).toBeInTheDocument();
-  });
-
-  it("shows tabs when locations require SVG files", () => {
-    const state = createMockState({ selectedIconId: "test-icon" });
-    render(
-      <PreviewPane
-        selectedIconId="test-icon"
-        selectedLocations={["top_bar"]}
-        state={state}
-      />
-    );
-    // Should have PNG and SVG tabs
-    expect(screen.getByRole("tab", { name: /png/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /svg/i })).toBeInTheDocument();
+    expect(screen.getByTestId("preset-preview")).toBeInTheDocument();
   });
 
   it("shows file count in export section", () => {
@@ -99,7 +99,7 @@ describe("PreviewPane", () => {
     render(
       <PreviewPane
         selectedIconId="test-icon"
-        selectedLocations={["top_bar"]}
+        selectedLocations={[]}
         state={state}
       />
     );

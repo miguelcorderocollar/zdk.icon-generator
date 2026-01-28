@@ -5,6 +5,7 @@ import { IconSearchPane } from "@/components/IconSearchPane";
 import { CustomizationControlsPane } from "@/components/CustomizationControlsPane";
 import { PreviewPane } from "@/components/PreviewPane";
 import { useIconGenerator } from "@/src/hooks/use-icon-generator";
+import { useCanvasEditor } from "@/src/hooks/use-canvas-editor";
 import { APP_NAME, APP_DESCRIPTION, ICON_PACKS } from "@/src/constants/app";
 import {
   Dialog,
@@ -27,6 +28,9 @@ export default function Home() {
   const [isWelcomeOpen, setIsWelcomeOpen] = React.useState(false);
   const { theme, mounted, toggleTheme } = useTheme();
 
+  // Canvas editor state - lifted to page level for sharing between components
+  const { state: canvasState, actions: canvasActions } = useCanvasEditor();
+
   // Check if canvas mode is active
   const isCanvasMode = state.selectedPack === ICON_PACKS.CANVAS;
 
@@ -36,6 +40,18 @@ export default function Home() {
       setIsWelcomeOpen(true);
     }
   }, []);
+
+  // Handler to apply icon color to all colorable layers in canvas
+  const handleApplyIconColorToLayers = React.useCallback(
+    (color: string) => {
+      canvasState.layers.forEach((layer) => {
+        if (layer.type === "icon" || layer.type === "text") {
+          canvasActions.updateLayer(layer.id, { color });
+        }
+      });
+    },
+    [canvasState.layers, canvasActions]
+  );
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -76,28 +92,27 @@ export default function Home() {
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <p className="text-sm text-muted-foreground">
-                    Zendesk App Icon Generator is a local-first tool for
-                    crafting compliant Zendesk app icon bundles. It streamlines
-                    choosing icons from vetted packs, customizing colors and
-                    effects, and exporting the required asset set with correct
-                    naming and sizing.
+                    App Icon Generator is a local-first tool for crafting icon
+                    bundles for any platform. It streamlines choosing icons from
+                    vetted packs, customizing colors and effects, and exporting
+                    the required asset set with correct naming and sizing.
                   </p>
                   <div className="space-y-2">
                     <h3 className="text-sm font-semibold">Key Features</h3>
                     <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                       <li>
-                        Centralized Apache-2.0 friendly icon packs (Zendesk
-                        Garden, Feather, and more)
+                        Multiple icon packs (Zendesk Garden, Feather, RemixIcon,
+                        and more)
                       </li>
                       <li>
-                        Intuitive search and selection experience tailored to
-                        Zendesk app locations
+                        Flexible export presets for different platforms
+                        (Zendesk, Raycast, macOS, PWA, etc.)
                       </li>
                       <li>
                         Real-time previews with configurable styling presets
                       </li>
                       <li>
-                        One-click ZIP export with correct naming and sizing
+                        One-click ZIP export with customizable formats and sizes
                       </li>
                     </ul>
                   </div>
@@ -186,6 +201,7 @@ export default function Home() {
                   onPackChange={actions.setSelectedPack}
                   backgroundColor={state.backgroundColor}
                   onBackgroundColorChange={actions.setBackgroundColor}
+                  onApplyIconColor={handleApplyIconColorToLayers}
                 />
               </div>
 
@@ -195,6 +211,8 @@ export default function Home() {
                   selectedLocations={state.selectedLocations}
                   selectedIconId={state.selectedIconId}
                   state={state}
+                  canvasState={canvasState}
+                  canvasActions={canvasActions}
                 />
               </div>
             </>
@@ -215,8 +233,6 @@ export default function Home() {
 
               <div className="flex min-h-[400px] flex-shrink-0 flex-col overflow-hidden md:h-full md:min-h-0 md:flex-1">
                 <CustomizationControlsPane
-                  selectedLocations={state.selectedLocations}
-                  onLocationsChange={actions.setSelectedLocations}
                   backgroundColor={state.backgroundColor}
                   onBackgroundColorChange={actions.setBackgroundColor}
                   iconColor={state.iconColor}

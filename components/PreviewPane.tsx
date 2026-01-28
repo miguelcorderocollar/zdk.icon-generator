@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Download, Monitor } from "lucide-react";
-import { PngPreview } from "@/src/components/PngPreview";
-import { SvgPreview } from "@/src/components/SvgPreview";
 import { EmptyState } from "@/src/components/EmptyState";
 import { PreviewHeader } from "@/src/components/PreviewHeader";
+import { PresetPreview } from "@/src/components/PresetPreview";
 import {
   CanvasEditor,
   LayersPanel,
@@ -17,39 +16,49 @@ import {
   AddLayerModal,
 } from "@/src/components";
 import { CanvasPngPreview } from "@/src/components/CanvasPngPreview";
-import {
-  calculateRequiredSvgFiles,
-  hasSvgRequirements,
-} from "@/src/utils/locations";
-import { ICON_PACKS, PREVIEW_TYPES } from "@/src/constants/app";
+import { ICON_PACKS } from "@/src/constants/app";
 import type { AppLocation } from "@/src/types/app-location";
 import type { IconGeneratorState } from "@/src/hooks/use-icon-generator";
+import type { CanvasEditorState } from "@/src/types/canvas";
+import type { CanvasEditorActions } from "@/src/hooks/use-canvas-editor";
 import { useCanvasEditor } from "@/src/hooks/use-canvas-editor";
+import { usePresets } from "@/src/hooks/use-presets";
 import { ExportModal } from "@/src/components/ExportModal";
 import { useIconMetadata } from "@/src/hooks/use-icon-metadata";
+import { isCustomImageIcon } from "@/src/utils/locations";
 
 export interface PreviewPaneProps {
   selectedLocations?: AppLocation[];
   selectedIconId?: string;
   state?: IconGeneratorState;
+  /** Canvas state passed from parent (for shared state with CanvasControlsPane) */
+  canvasState?: CanvasEditorState;
+  /** Canvas actions passed from parent */
+  canvasActions?: CanvasEditorActions;
 }
 
 export function PreviewPane({
   selectedLocations = [],
   selectedIconId,
   state,
+  canvasState: externalCanvasState,
+  canvasActions: externalCanvasActions,
 }: PreviewPaneProps) {
   const [isExportModalOpen, setIsExportModalOpen] = React.useState(false);
   const [isAddLayerModalOpen, setIsAddLayerModalOpen] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
   const iconMetadata = useIconMetadata(selectedIconId);
 
-  // Canvas editor state
-  const {
-    state: canvasState,
-    actions: canvasActions,
-    selectedLayer,
-  } = useCanvasEditor();
+  // Presets hook
+  const { selectedExportPreset, selectedStylePreset } = usePresets();
+
+  // Canvas editor state - use external if provided, otherwise create internal
+  const internalCanvas = useCanvasEditor();
+  const canvasState = externalCanvasState ?? internalCanvas.state;
+  const canvasActions = externalCanvasActions ?? internalCanvas.actions;
+  const selectedLayer = canvasState.layers.find(
+    (l) => l.id === canvasState.selectedLayerId
+  );
 
   // Check if mobile
   React.useEffect(() => {
@@ -61,17 +70,34 @@ export function PreviewPane({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const requiredSvgFiles = React.useMemo(
-    () => calculateRequiredSvgFiles(selectedLocations),
-    [selectedLocations]
-  );
-
   const isCanvasMode = state?.selectedPack === ICON_PACKS.CANVAS;
-  const hasSvgFiles = hasSvgRequirements(selectedLocations);
-  const hasPngFiles = true;
+  const isCustomImage = isCustomImageIcon(selectedIconId);
+
+  // Calculate export info from selected preset
+  const exportInfo = React.useMemo(() => {
+    if (!selectedExportPreset) {
+      return { total: 0, skipped: 0, exportable: 0 };
+    }
+
+    let skipped = 0;
+    for (const v of selectedExportPreset.variants) {
+      if (isCanvasMode && (v.format === "svg" || v.format === "ico")) {
+        skipped++;
+      } else if (isCustomImage && (v.format === "svg" || v.format === "ico")) {
+        skipped++;
+      }
+    }
+
+    return {
+      total: selectedExportPreset.variants.length,
+      skipped,
+      exportable: selectedExportPreset.variants.length - skipped,
+    };
+  }, [selectedExportPreset, isCanvasMode, isCustomImage]);
+
   const canExport = isCanvasMode
-    ? canvasState.layers.length > 0
-    : hasPngFiles || hasSvgFiles;
+    ? canvasState.layers.length > 0 && exportInfo.exportable > 0
+    : exportInfo.exportable > 0;
   const hasSelection = isCanvasMode
     ? canvasState.layers.length > 0
     : selectedIconId !== undefined;
@@ -114,7 +140,7 @@ export function PreviewPane({
           <Tabs defaultValue="canvas" className="flex flex-1 flex-col min-h-0">
             <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
               <TabsTrigger value="canvas">Canvas</TabsTrigger>
-              <TabsTrigger value="png">PNG Preview</TabsTrigger>
+              <TabsTrigger value="preview">Preview</TabsTrigger>
             </TabsList>
 
             <TabsContent
@@ -154,21 +180,17 @@ export function PreviewPane({
             </TabsContent>
 
             <TabsContent
-              value="png"
+              value="preview"
               className="flex-1 overflow-hidden mt-3 min-h-0 data-[state=inactive]:hidden"
             >
-              <ScrollArea className="h-full">
-                <div className="pr-3">
-                  {canvasState.layers.length > 0 ? (
-                    <CanvasPngPreview canvasState={canvasState} />
-                  ) : (
-                    <EmptyState
-                      title="No layers"
-                      description="Add layers to the canvas to see a preview."
-                    />
-                  )}
-                </div>
-              </ScrollArea>
+              {canvasState.layers.length > 0 && selectedExportPreset ? (
+                <CanvasPngPreview canvasState={canvasState} />
+              ) : (
+                <EmptyState
+                  title="No layers"
+                  description="Add layers to the canvas to see a preview."
+                />
+              )}
             </TabsContent>
           </Tabs>
 
@@ -176,7 +198,7 @@ export function PreviewPane({
           <div className="flex-shrink-0 border-t pt-3 mt-3 space-y-2">
             <div className="text-xs text-muted-foreground">
               {canvasState.layers.length > 0
-                ? "Will export 2 PNG files (no SVG in canvas mode)"
+                ? `Will export ${exportInfo.exportable} file${exportInfo.exportable !== 1 ? "s" : ""}${exportInfo.skipped > 0 ? ` (${exportInfo.skipped} skipped)` : ""}`
                 : "Add layers to enable export"}
             </div>
             <Button
@@ -197,7 +219,8 @@ export function PreviewPane({
           onOpenChange={setIsAddLayerModalOpen}
           actions={canvasActions}
           iconColor={
-            typeof state?.iconColor === "string" ? state.iconColor : "#ffffff"
+            selectedStylePreset?.iconColor ??
+            (typeof state?.iconColor === "string" ? state.iconColor : "#ffffff")
           }
         />
 
@@ -224,52 +247,34 @@ export function PreviewPane({
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-4 overflow-hidden p-6">
         {/* Preview Content Area - Scrollable */}
-        <ScrollArea className="flex-1 min-h-0">
-          <div className="pr-3">
-            {!hasSelection ? (
-              <EmptyState
-                title="No icon selected"
-                description="Select an icon from the search pane to see a preview here."
-              />
-            ) : hasPngFiles && hasSvgFiles ? (
-              <Tabs defaultValue={PREVIEW_TYPES.PNG} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value={PREVIEW_TYPES.PNG}>PNG</TabsTrigger>
-                  <TabsTrigger value={PREVIEW_TYPES.SVG}>SVG</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value={PREVIEW_TYPES.PNG} className="mt-4">
-                  <PngPreview iconId={selectedIconId} state={state} />
-                </TabsContent>
-
-                <TabsContent value={PREVIEW_TYPES.SVG} className="mt-4">
-                  <SvgPreview
-                    svgFiles={requiredSvgFiles}
-                    iconId={selectedIconId}
-                    state={state}
-                  />
-                </TabsContent>
-              </Tabs>
-            ) : hasPngFiles ? (
-              <PngPreview iconId={selectedIconId} state={state} />
-            ) : (
-              <EmptyState
-                title="Select app locations"
-                description="Select app locations to see previews"
-              />
-            )}
-          </div>
-        </ScrollArea>
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {!hasSelection ? (
+            <EmptyState
+              title="No icon selected"
+              description="Select an icon from the search pane to see a preview here."
+            />
+          ) : selectedExportPreset ? (
+            <PresetPreview
+              preset={selectedExportPreset}
+              iconId={selectedIconId}
+              state={state}
+              isCanvasMode={false}
+            />
+          ) : (
+            <EmptyState
+              title="No preset selected"
+              description="Select an export preset to see previews."
+            />
+          )}
+        </div>
 
         {/* Export Button - Sticky at bottom */}
         <div className="flex-shrink-0 border-t pt-4 mt-auto space-y-2">
-          {canExport && (
+          {canExport && hasSelection && (
             <div className="text-xs text-muted-foreground">
-              {hasPngFiles && hasSvgFiles
-                ? `Will export ${2 + requiredSvgFiles.length} files`
-                : hasPngFiles
-                  ? "Will export 2 PNG files"
-                  : `Will export ${requiredSvgFiles.length} SVG files`}
+              Will export {exportInfo.exportable} file
+              {exportInfo.exportable !== 1 ? "s" : ""}
+              {exportInfo.skipped > 0 && ` (${exportInfo.skipped} skipped)`}
             </div>
           )}
           <Button

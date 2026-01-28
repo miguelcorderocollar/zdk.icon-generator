@@ -39,7 +39,6 @@ import { EmojiInput } from "@/src/components/EmojiInput";
 import { CustomSvgInput } from "@/src/components/CustomSvgInput";
 import { CustomImageInput } from "@/src/components/CustomImageInput";
 import { getRemixIconCategories } from "@/src/utils/icon-catalog";
-import { hasSvgRequirements } from "@/src/utils/locations";
 import type { AppLocation } from "@/src/types/app-location";
 
 export interface IconSearchPaneProps {
@@ -49,7 +48,7 @@ export interface IconSearchPaneProps {
   onPackChange?: (pack: IconPack) => void;
   selectedIconId?: string;
   onIconSelect?: (iconId: string) => void;
-  /** Selected app locations - used to disable Custom Image when SVG locations are selected */
+  /** Selected app locations - kept for backwards compatibility */
   selectedLocations?: AppLocation[];
   /** When true, shows minimal UI (just pack selector) for canvas mode */
   isCanvasMode?: boolean;
@@ -62,7 +61,6 @@ export function IconSearchPane({
   onPackChange,
   selectedIconId,
   onIconSelect,
-  selectedLocations = [],
   isCanvasMode = false,
 }: IconSearchPaneProps) {
   const searchInputRef = React.useRef<HTMLInputElement>(null);
@@ -75,9 +73,6 @@ export function IconSearchPane({
   const [remixiconCategories, setRemixiconCategories] = React.useState<
     string[]
   >([]);
-
-  // Check if SVG-requiring locations are selected (disables Custom Image option)
-  const hasSvgLocationsSelected = hasSvgRequirements(selectedLocations);
 
   React.useEffect(() => {
     setIsMac(navigator.platform.toUpperCase().indexOf("MAC") >= 0);
@@ -198,19 +193,13 @@ export function IconSearchPane({
                   Custom SVG
                 </span>
               </SelectItem>
-              <SelectItem
-                value={ICON_PACKS.CUSTOM_IMAGE}
-                disabled={hasSvgLocationsSelected}
-              >
+              <SelectItem value={ICON_PACKS.CUSTOM_IMAGE}>
                 <span className="flex items-center gap-2">
                   <ImageIcon className="size-4" />
                   Custom Image
                 </span>
               </SelectItem>
-              <SelectItem
-                value={ICON_PACKS.CANVAS}
-                disabled={hasSvgLocationsSelected}
-              >
+              <SelectItem value={ICON_PACKS.CANVAS}>
                 <span className="flex items-center gap-2">
                   <PenTool className="size-4" />
                   Canvas Editor
@@ -363,56 +352,18 @@ export function IconSearchPane({
                   Custom SVG
                 </span>
               </SelectItem>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="w-full">
-                      <SelectItem
-                        value={ICON_PACKS.CUSTOM_IMAGE}
-                        disabled={hasSvgLocationsSelected}
-                      >
-                        <span className="flex items-center gap-2">
-                          <ImageIcon className="size-4" />
-                          Custom Image
-                        </span>
-                      </SelectItem>
-                    </span>
-                  </TooltipTrigger>
-                  {hasSvgLocationsSelected && (
-                    <TooltipContent side="left">
-                      <p className="max-w-xs">
-                        Custom images cannot be used with locations that require
-                        SVG icons (Nav Bar, Top Bar, Ticket Editor)
-                      </p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="w-full">
-                      <SelectItem
-                        value={ICON_PACKS.CANVAS}
-                        disabled={hasSvgLocationsSelected}
-                      >
-                        <span className="flex items-center gap-2">
-                          <PenTool className="size-4" />
-                          Canvas Editor
-                        </span>
-                      </SelectItem>
-                    </span>
-                  </TooltipTrigger>
-                  {hasSvgLocationsSelected && (
-                    <TooltipContent side="left">
-                      <p className="max-w-xs">
-                        Canvas Editor cannot be used with locations that require
-                        SVG icons (Nav Bar, Top Bar, Ticket Editor)
-                      </p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
+              <SelectItem value={ICON_PACKS.CUSTOM_IMAGE}>
+                <span className="flex items-center gap-2">
+                  <ImageIcon className="size-4" />
+                  Custom Image
+                </span>
+              </SelectItem>
+              <SelectItem value={ICON_PACKS.CANVAS}>
+                <span className="flex items-center gap-2">
+                  <PenTool className="size-4" />
+                  Canvas Editor
+                </span>
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -459,8 +410,6 @@ export function IconSearchPane({
               onSelect={(imageId) => {
                 handleIconSelect(imageId);
               }}
-              disabled={hasSvgLocationsSelected}
-              disabledMessage="Custom images cannot be used with locations that require SVG icons (Nav Bar, Top Bar, Ticket Editor). Please deselect these locations first."
             />
           ) : selectedPack === ICON_PACKS.CUSTOM_SVG ? (
             <CustomSvgInput

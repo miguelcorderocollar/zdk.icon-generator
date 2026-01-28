@@ -121,7 +121,7 @@ export function AddLayerModal({
 
   const handleAddText = () => {
     if (!textContent.trim()) return;
-    actions.addTextLayer(textContent.trim(), { fontFamily });
+    actions.addTextLayer(textContent.trim(), { fontFamily, color: iconColor });
     setTextContent("");
     onOpenChange(false);
   };
