@@ -118,6 +118,9 @@ export const metadata: Metadata = {
     },
   },
   category: "developer tools",
+  verification: {
+    google: "8FEm09MksiGqIrEv84UJ5ybDCh7Z8nYgCKzH6JhYTTI",
+  },
   other: {
     "mobile-web-app-capable": "yes",
     "apple-mobile-web-app-capable": "yes",
